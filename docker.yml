@@ -40,6 +40,23 @@
         plugin_name: grafana/loki-docker-driver:latest
         alias: loki
         state: enable
+    - name: Setup mDNS domains
+      ansible.builtin.systemd:
+        name: avahi-subdomain@{{ item }}.local.service
+        state: started
+        enabled: yes
+      loop:
+        - gitea
+        - nexus
+        - nexusdocker
+    - name: Setup Docker Daemon configuration
+      ansible.builtin.copy:
+        src: daemon.json
+        dest: /etc/docker/daemon.json
+        owner: root
+        group: root
+        mode: u+rw,g+rw
+
   handlers:
     - name: restart ssh
       service:
