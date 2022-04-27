@@ -49,6 +49,7 @@
         - gitea
         - nexus
         - nexusdocker
+        - woodpecker
     - name: Setup Docker Daemon configuration
       ansible.builtin.copy:
         src: daemon.json
