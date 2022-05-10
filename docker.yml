@@ -50,6 +50,14 @@
         - nexus
         - nexusdocker
         - woodpecker
+        - dockerregistry
+    - name: Update Avahi configuration
+      lineinfile:
+           dest=/etc/avahi/avahi-daemon.conf
+           regexp='^#?enable-reflector='
+           line="enable-reflector=yes"
+           state=present
+           backup=yes
     - name: Setup Docker Daemon configuration
       ansible.builtin.copy:
         src: daemon.json
