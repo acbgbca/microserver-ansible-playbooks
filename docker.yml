@@ -65,6 +65,8 @@
         owner: root
         group: root
         mode: u+rw,g+rw
+    - name: Setup automatic updates
+      import_tasks: shared_tasks/auto-updates.yml
 
   handlers:
     - name: restart ssh

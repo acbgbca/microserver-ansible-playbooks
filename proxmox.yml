@@ -47,6 +47,8 @@
       apt:
         pkg:
         - prometheus-node-exporter
+    - name: Setup automatic updates
+      import_tasks: shared_tasks/auto-updates.yml
   handlers:
     - name: restart ssh
       service:
