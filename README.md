@@ -27,9 +27,3 @@ ansible-playbook proxmox.yml -i hosts
 *Create Ubuntu Server Template*
 * Log into Proxmox
 * 
-
-### Create mDNS record
-
-```
-sudo systemctl enable --now avahi-subdomain@<service>.local.service
-```
