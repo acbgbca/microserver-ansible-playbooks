@@ -47,6 +47,38 @@
         owner: root
         group: root
         mode: u+rw,g+rw
+    - name: NFS Video mount
+      docker_volume:
+        driver: "local"
+        driver_options:
+          type: nfs
+          o: "addr=192.168.0.201,rw"
+          device: :/nfs/videos
+        volume_name: videos
+    - name: NFS downloads mount
+      docker_volume:
+        driver: "local"
+        driver_options:
+          type: nfs
+          o: "addr=192.168.0.201,rw"
+          device: :/nfs/downloads
+        volume_name: downloads
+    - name: NFS pictures mount
+      docker_volume:
+        driver: "local"
+        driver_options:
+          type: nfs
+          o: "addr=192.168.0.201,rw"
+          device: :/nfs/pictures
+        volume_name: pictures
+    - name: NFS music mount
+      docker_volume:
+        driver: "local"
+        driver_options:
+          type: nfs
+          o: "addr=192.168.0.201,rw"
+          device: :/nfs/music
+        volume_name: music
     - name: Setup automatic updates
       import_tasks: shared_tasks/auto-updates.yml
 
