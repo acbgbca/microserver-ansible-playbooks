@@ -40,13 +40,20 @@
         plugin_name: grafana/loki-docker-driver:latest
         alias: loki
         state: enable
-    - name: Setup Docker Daemon configuration
-      ansible.builtin.copy:
-        src: daemon.json
-        dest: /etc/docker/daemon.json
-        owner: root
-        group: root
-        mode: u+rw,g+rw
+    - name: Docker ctr-network
+      docker_network:
+        driver: bridge
+        name: ctr-network
+    - name: Docker macvlan network
+      docker_network:
+        name: lan-network
+        driver: "macvlan"
+        driver_options:
+          parent: eth0
+        ipam_config:
+          - subnet: "192.168.0.0/24"
+            gateway: "192.168.0.1"
+            iprange: "192.168.0.64/26"
     - name: NFS Video mount
       docker_volume:
         driver: "local"
