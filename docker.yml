@@ -30,6 +30,28 @@
            backup=yes
       notify:
         - restart ssh
+    - name: add GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+    - name: add docker repository to apt
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+    - name: install docker
+      apt:
+        name: "{{item}}"
+        state: present
+        update_cache: yes
+      loop:
+        - docker-ce
+        - docker-ce-cli
+        - git
+    - name: Ensure Docker is started
+      service:
+        name: docker
+        state: started
+        enabled: yes
     - name: Install Loki Plugin
       community.docker.docker_plugin:
         plugin_name: grafana/loki-docker-driver:latest
@@ -86,6 +108,70 @@
           o: "addr=192.168.0.201,rw"
           device: :/nfs/music
         volume_name: music
+    - name: Add docker data group
+      group:
+        name: ctrdata
+        state: present
+        gid: 9001
+    - name: Add docker data user
+      user:
+        name: ctrdata
+        state: present
+        uid: 9001
+        group: ctrdata
+        groups:
+          - ctrdata
+          - docker
+    - name: Add devops to ctrdata
+      user:
+        name: devops
+        state: present
+        append: yes
+        groups:
+          - docker
+          - ctrdata
+    - name: Setup docker directories
+      file:
+        path: "{{item}}"
+        state: directory
+        mode: 0775
+        owner: ctrdata
+        group: ctrdata
+      loop:
+        - /ctr_cfg
+        - /ctr_data
+    - name: Checkout Docker configuration
+      git:
+        repo: git@github.com:acbgbca/microserver-docker.git
+        dest: /ctr_cfg
+        update: no
+      register: gitupdate
+    - name: Fix Git ownership
+      file:
+        path: /ctr_cfg
+        state: directory
+        mode: 0775
+        owner: ctrdata
+        group: ctrdata
+        recursive: yes
+      when: gitupdate.changed
+    - name: Setup NFS backup directory
+      file:
+        path: "/mnt/backup"
+        state: directory
+    - name: Setup backup NFS mount
+      lineinfile:
+        path: /etc/fstab
+        backup: yes
+        search_string: '/mnt/backup'
+        line: "192.168.0.201:/nfs/backup/docker        /mnt/backup     nfs     defaults        0 0"
+        state: present
+      register: backupnfs
+    - name: Mount backup
+      ansible.posix.mount:
+        path: /mnt/backup
+        state: remounted
+      when: backupnfs.changed
     - name: Setup automatic updates
       import_tasks: shared_tasks/auto-updates.yml
 
