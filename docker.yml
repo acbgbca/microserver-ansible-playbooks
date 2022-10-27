@@ -1,17 +1,20 @@
 ---
 # file: docker.yml
 - hosts: docker
-  gather_facts: yes
-  remote_user: devops
   become: true
   
+  pre_tasks:
+    - name: Update apt-cache if needed
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
   tasks:
-    - name: Add devops user to the sudoers
+    - name: Add user to the sudoers
       copy:
           dest: "/etc/sudoers.d/devops"
-          content: "devops  ALL=(ALL)  NOPASSWD: ALL"
+          content: "{{ ansible_user }}  ALL=(ALL)  NOPASSWD: ALL"
     - name: Deploy SSH Key
-      authorized_key: user=devops
+      authorized_key: user={{ ansible_user }}
                      key="{{ lookup('file', 'authorized_sshkey.pub') }}"
                      state=present
     - name: Disable Password Authentication
@@ -40,13 +43,11 @@
         state: present
     - name: install docker
       apt:
-        name: "{{item}}"
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - git
         state: present
-        update_cache: yes
-      loop:
-        - docker-ce
-        - docker-ce-cli
-        - git
     - name: Ensure Docker is started
       service:
         name: docker
@@ -62,10 +63,11 @@
         plugin_name: grafana/loki-docker-driver:latest
         alias: loki
         state: enable
-    - name: Docker ctr-network
+    - name: Docker Bridge Networks
       docker_network:
         driver: bridge
-        name: ctr-network
+        name: "{{ item }}"
+      with_items: "{{ bridge_networks }}"
     - name: Docker macvlan network
       docker_network:
         name: lan-network
@@ -76,67 +78,44 @@
           - subnet: "192.168.0.0/24"
             gateway: "192.168.0.1"
             iprange: "192.168.0.64/26"
-    - name: NFS Video mount
+    - name: Docker NFS Networks
       docker_volume:
         driver: "local"
         driver_options:
           type: nfs
           o: "addr=192.168.0.201,rw"
-          device: :/nfs/videos
-        volume_name: videos
-    - name: NFS downloads mount
-      docker_volume:
-        driver: "local"
-        driver_options:
-          type: nfs
-          o: "addr=192.168.0.201,rw"
-          device: :/nfs/downloads
-        volume_name: downloads
-    - name: NFS pictures mount
-      docker_volume:
-        driver: "local"
-        driver_options:
-          type: nfs
-          o: "addr=192.168.0.201,rw"
-          device: :/nfs/pictures
-        volume_name: pictures
-    - name: NFS music mount
-      docker_volume:
-        driver: "local"
-        driver_options:
-          type: nfs
-          o: "addr=192.168.0.201,rw"
-          device: :/nfs/music
-        volume_name: music
+          device: "{{ item.device }}"
+        volume_name: "{{ item.name }}"
+      with_items: "{{ nfs_networks }}"
     - name: Add docker data group
       group:
-        name: ctrdata
+        name: "{{ data_user }}"
         state: present
-        gid: 9001
+        gid: "{{ data_id }}"
     - name: Add docker data user
       user:
-        name: ctrdata
+        name: "{{ data_user }}"
         state: present
-        uid: 9001
-        group: ctrdata
+        uid: "{{ data_id }}"
+        group: "{{ data_user }}"
         groups:
-          - ctrdata
+          - "{{ data_user }}"
           - docker
-    - name: Add devops to ctrdata
+    - name: Add devops to "{{ data_user }}"
       user:
         name: devops
         state: present
         append: yes
         groups:
           - docker
-          - ctrdata
+          - "{{ data_user }}"
     - name: Setup docker directories
       file:
         path: "{{item}}"
         state: directory
         mode: 0775
-        owner: ctrdata
-        group: ctrdata
+        owner: "{{ data_user }}"
+        group: "{{ data_user }}"
       loop:
         - /ctr_cfg
         - /ctr_data
@@ -151,8 +130,8 @@
         path: /ctr_cfg
         state: directory
         mode: 0775
-        owner: ctrdata
-        group: ctrdata
+        owner: "{{ data_user }}"
+        group: "{{ data_user }}"
         recursive: yes
       when: gitupdate.changed
     - name: Setup NFS backup directory
@@ -166,12 +145,7 @@
         search_string: '/mnt/backup'
         line: "192.168.0.201:/nfs/backup/docker        /mnt/backup     nfs     defaults        0 0"
         state: present
-      register: backupnfs
-    - name: Mount backup
-      ansible.posix.mount:
-        path: /mnt/backup
-        state: remounted
-      when: backupnfs.changed
+      notify: Mount backup
     - name: Setup automatic updates
       import_tasks: shared_tasks/auto-updates.yml
 
@@ -180,3 +154,7 @@
       service:
         name=sshd
         state=restarted
+    - name: Mount backup
+      ansible.posix.mount:
+        path: /mnt/backup
+        state: remounted

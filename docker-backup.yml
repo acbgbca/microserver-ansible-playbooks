@@ -1,0 +1,42 @@
+---
+# file: docker.yml
+- hosts: docker
+  remote_user: devops
+  become: true
+  # connection: local
+
+  tasks:
+  - name: Clean up plex history
+    shell: 'find "/ctr_cfg/plex/config/Library/Application Support/Plex Media Server/Cache/PhotoTranscoder" -type f -mtime +5 -delete'
+  - name: Get current date
+    shell: 'date "+%Y%m%d"'
+    register: currdate
+  - set_fact:
+      currdate={{ currdate.stdout }}
+  - name: Create temporary archive directory
+    file:
+      path: "/tmp/backup/{{ currdate }}"
+      state: directory
+      mode: 0775
+      owner: ctrdata
+      group: ctrdata
+  - name: Get all dirs
+    find:
+      paths: /ctr_cfg
+      file_type: directory
+    register: dockerdirs
+  - name: Backup each directory
+    community.general.archive:
+      path: "{{ item.path }}"
+      dest: /tmp/backup/{{ currdate }}/{{ item.path | basename }}.tgz
+      owner: ctrdata
+      group: ctrdata
+      format: gz
+    with_items: "{{ dockerdirs.files }}"
+  - name: Copy to backup NFS
+    copy:
+      src: /tmp/backup/{{ currdate }}
+      dest: /mnt/backup/
+      remote_src: yes
+      directory_mode: yes
+    become_user: ctrdata

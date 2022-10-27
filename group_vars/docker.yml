@@ -1,0 +1,14 @@
+---
+bridge_networks:
+  - ctr-network
+nfs_networks:
+  - name: videos
+    device: ":/nfs/videos"
+  - name: downloads
+    device: ":/nfs/downloads"
+  - name: pictures
+    device: ":/nfs/pictures"
+  - name: music
+    device: ":/nfs/music"
+data_user: ctrdata
+data_id: 9001

@@ -6,3 +6,10 @@
 
 [kasm]
 192.168.0.203
+
+[multi:children]
+proxmox
+docker
+
+[multi:vars]
+ansible_user=devops
