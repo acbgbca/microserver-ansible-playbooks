@@ -87,8 +87,6 @@
         line: "192.168.0.201:/nfs/backup/docker        /mnt/backup     nfs     defaults        0 0"
         state: present
       notify: Mount backup
-    - name: Setup automatic updates
-      import_tasks: shared_tasks/auto-updates.yml
 
   handlers:
     - name: Mount backup
