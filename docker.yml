@@ -8,85 +8,6 @@
       apt:
         update_cache: yes
         cache_valid_time: 3600
-  tasks:
-    - name: Add user to the sudoers
-      copy:
-          dest: "/etc/sudoers.d/devops"
-          content: "{{ ansible_user }}  ALL=(ALL)  NOPASSWD: ALL"
-    - name: Deploy SSH Key
-      authorized_key: user={{ ansible_user }}
-                     key="{{ lookup('file', 'authorized_sshkey.pub') }}"
-                     state=present
-    - name: Disable Password Authentication
-      lineinfile:
-           dest=/etc/ssh/sshd_config
-           regexp='^PasswordAuthentication'
-           line="PasswordAuthentication no"
-           state=present
-           backup=yes
-    - name: Disable Root Login
-      lineinfile:
-           dest=/etc/ssh/sshd_config
-           regexp='^PermitRootLogin'
-           line="PermitRootLogin no"
-           state=present
-           backup=yes
-      notify:
-        - restart ssh
-    - name: add GPG key
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
-    - name: add docker repository to apt
-      apt_repository:
-        repo: deb https://download.docker.com/linux/ubuntu focal stable
-        state: present
-    - name: install docker
-      apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - git
-        state: present
-    - name: Ensure Docker is started
-      service:
-        name: docker
-        state: started
-        enabled: yes
-    - name: Install Loki Plugin
-      community.docker.docker_plugin:
-        plugin_name: grafana/loki-docker-driver:latest
-        alias: loki
-        state: present
-    - name: Enable Loki Plugin
-      community.docker.docker_plugin:
-        plugin_name: grafana/loki-docker-driver:latest
-        alias: loki
-        state: enable
-    - name: Docker Bridge Networks
-      docker_network:
-        driver: bridge
-        name: "{{ item }}"
-      with_items: "{{ bridge_networks }}"
-    - name: Docker macvlan network
-      docker_network:
-        name: lan-network
-        driver: "macvlan"
-        driver_options:
-          parent: eth0
-        ipam_config:
-          - subnet: "192.168.0.0/24"
-            gateway: "192.168.0.1"
-            iprange: "192.168.0.64/26"
-    - name: Docker NFS Networks
-      docker_volume:
-        driver: "local"
-        driver_options:
-          type: nfs
-          o: "addr=192.168.0.201,rw"
-          device: "{{ item.device }}"
-        volume_name: "{{ item.name }}"
-      with_items: "{{ nfs_networks }}"
     - name: Add docker data group
       group:
         name: "{{ data_user }}"
@@ -98,16 +19,36 @@
         state: present
         uid: "{{ data_id }}"
         group: "{{ data_user }}"
+        append: yes
         groups:
           - "{{ data_user }}"
-          - docker
+    
+  roles:
+    - base_server
+    - docker
+  
+  tasks:
+    - name: Docker macvlan network
+      docker_network:
+        name: lan-network
+        driver: "macvlan"
+        driver_options:
+          parent: eth0
+        ipam_config:
+          - subnet: "192.168.0.0/24"
+            gateway: "192.168.0.1"
+            iprange: "192.168.0.64/26"
+    - name: Install git
+      apt:
+        name:
+          - git
+        state: present
     - name: Add devops to "{{ data_user }}"
       user:
         name: devops
         state: present
         append: yes
         groups:
-          - docker
           - "{{ data_user }}"
     - name: Setup docker directories
       file:
@@ -150,10 +91,6 @@
       import_tasks: shared_tasks/auto-updates.yml
 
   handlers:
-    - name: restart ssh
-      service:
-        name=sshd
-        state=restarted
     - name: Mount backup
       ansible.posix.mount:
         path: /mnt/backup

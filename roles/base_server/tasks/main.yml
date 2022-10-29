@@ -1,0 +1,31 @@
+---
+- name: Install Unattended Upgrades
+  apt:
+    pkg:
+    - unattended-upgrades
+- name: Add user to the sudoers
+  copy:
+      dest: "/etc/sudoers.d/{{ ansible_user }}"
+      content: "{{ ansible_user }}  ALL=(ALL)  NOPASSWD: ALL"
+- name: Deploy SSH Key
+  authorized_key: user={{ ansible_user }}
+                  key="{{ lookup('file', 'authorized_sshkey.pub') }}"
+                  state=present
+- name: Disable Password Authentication
+  lineinfile:
+        dest=/etc/ssh/sshd_config
+        regexp='^PasswordAuthentication'
+        line="PasswordAuthentication no"
+        state=present
+        backup=yes
+  notify:
+    - restart ssh
+- name: Disable Root Login
+  lineinfile:
+        dest=/etc/ssh/sshd_config
+        regexp='^PermitRootLogin'
+        line="PermitRootLogin no"
+        state=present
+        backup=yes
+  notify:
+    - restart ssh

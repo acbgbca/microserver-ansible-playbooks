@@ -1,0 +1,59 @@
+---
+- name: add GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+- name: add docker repository to apt
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu focal stable
+    state: present
+- name: Install docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+    state: present
+- name: Ensure Docker is started
+  service:
+    name: docker
+    state: started
+    enabled: yes
+- name: Install Plugins
+  community.docker.docker_plugin:
+    plugin_name: "{{ item.plugin }}"
+    alias: "{{ item.name }}"
+    state: present
+  with_items: "{{ docker_plugins }}"
+  when: docker_plugins is defined
+- name: Enable Plugins
+  community.docker.docker_plugin:
+    plugin_name: grafana/loki-docker-driver:latest
+    alias: loki
+    state: enable
+  with_items: "{{ docker_plugins }}"
+  when: docker_plugins is defined
+- name: Docker Bridge Networks
+  docker_network:
+    driver: bridge
+    name: "{{ item }}"
+  with_items: "{{ docker_networks_bridge }}"
+  when: docker_networks_bridge is defined
+- name: Docker NFS Networks
+  docker_volume:
+    driver: "local"
+    driver_options:
+      type: nfs
+      o: "addr={{ item.host }},{{ item.access }}"
+      device: "{{ item.device }}"
+    volume_name: "{{ item.name }}"
+  with_items: "{{ docker_networks_nfs }}"
+  when: docker_networks_nfs is defined
+- name: Add users to docker group
+  user:
+    name: "{{ item }}"
+    state: present
+    append: yes
+    groups:
+      - docker
+  with_items: "{{ docker_users }}"
+  when: docker_users is defined
