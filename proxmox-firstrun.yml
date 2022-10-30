@@ -1,14 +1,10 @@
 ---
 # file: proxmox-firstrun.yml
 - hosts: proxmox
-  vars:
-    ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
-  roles:
-    - including_vars
   gather_facts: no
   remote_user: root
-  
-  tasks:
+
+  pre_tasks:
     - name: install python
       raw: 'apt-get install python3'
       args:
@@ -17,15 +13,6 @@
       apt:
         name: sudo
         state: present
-    - name: Add a new user named devops
-      user:
-          name: devops
-          shell: /bin/bash
-    - name: Add devops user to the sudoers
-      copy:
-          dest: "/etc/sudoers.d/devops"
-          content: "devops  ALL=(ALL)  NOPASSWD: ALL"
-    - name: Deploy SSH Key
-      authorized_key: user=devops
-                     key="{{ lookup('file', 'authorized_sshkey.pub') }}"
-                     state=present
+  
+  roles:
+  - base_server

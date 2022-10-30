@@ -3,29 +3,49 @@
   apt:
     pkg:
     - unattended-upgrades
-- name: Add user to the sudoers
-  copy:
-      dest: "/etc/sudoers.d/{{ ansible_user }}"
-      content: "{{ ansible_user }}  ALL=(ALL)  NOPASSWD: ALL"
-- name: Deploy SSH Key
-  authorized_key: user={{ ansible_user }}
-                  key="{{ lookup('file', 'authorized_sshkey.pub') }}"
-                  state=present
-- name: Disable Password Authentication
-  lineinfile:
-        dest=/etc/ssh/sshd_config
-        regexp='^PasswordAuthentication'
-        line="PasswordAuthentication no"
-        state=present
-        backup=yes
-  notify:
-    - restart ssh
-- name: Disable Root Login
-  lineinfile:
-        dest=/etc/ssh/sshd_config
-        regexp='^PermitRootLogin'
-        line="PermitRootLogin no"
-        state=present
-        backup=yes
-  notify:
-    - restart ssh
+    - ufw
+- block:
+  - name: Add default user
+    user:
+      name: "{{ default_user }}"
+      shell: /bin/bash
+  - name: Add default user to the sudoers
+    copy:
+      dest: "/etc/sudoers.d/{{ default_user }}"
+      content: "{{ default_user }}  ALL=(ALL)  NOPASSWD: ALL"
+  - name: Deploy SSH Key
+    authorized_key:
+      user: "{{ default_user }}"
+      key: "{{ lookup('file', 'authorized_sshkey.pub') }}"
+      state: present
+  - name: Setup ssh config
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: "{{ item.regexp }}"
+      line: "{{ item.line }}"
+      state: present
+      validate: 'sshd -t -f %s'
+    with_items: 
+      - regexp: ^PasswordAuthentication
+        line: PasswordAuthentication no
+      - regexp: ^PermitRootLogin
+        line: PermitRootLogin no
+    notify:
+      - restart ssh
+  when: default_user is defined
+- block:
+  - name: Open ports
+    ufw:
+      rule: allow
+      port: "{{ item.port }}"
+      proto: "{{ item.proto }}"
+    with_items: "{{ open_ports }}"
+  - name: Default firewall rules
+    ufw:
+      direction: "{{ item.direction }}"
+      policy: "{{ item.policy }}"
+      state: enabled
+    with_items:
+      - { direction: outgoing, policy: allow }
+      - { direction: incoming, policy: deny }
+  when: open_ports is defined
