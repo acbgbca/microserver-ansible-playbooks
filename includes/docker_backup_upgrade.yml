@@ -1,0 +1,33 @@
+---
+- name: Check if Docker directory
+  stat:
+    path: "{{ item.path }}/docker-compose.yml"
+  register: isDocker
+- name: Check if skip
+  stat:
+    path: "{{ item.path }}/.no_upgrade"
+  register: isSkip
+- block:
+  - name: "Stop Container {{ item.path | basename }}"
+    community.docker.docker_compose:
+      project_src: "{{ item.path }}"
+      state: present
+      stopped: yes
+  - name: "Backup {{ item.path | basename }}"
+    community.general.archive:
+      path: "{{ item.path }}"
+      dest: "{{ backup_dir}}/{{ item.path | basename }}.tgz"
+      format: gz
+  - name: "Upgrade and restart Container {{ item.path | basename }}"
+    community.docker.docker_compose:
+      project_src: "{{ item.path }}"
+      pull: yes
+      state: present
+  when: isDocker.stat.exists and not isSkip.stat.exists
+  always:
+  - name: "Ensure started {{ item.path | basename }} on failure"
+    community.docker.docker_compose:
+      project_src: "{{ item.path }}"
+      pull: no
+      state: present
+  

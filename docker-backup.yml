@@ -11,8 +11,13 @@
   - name: Get current date
     shell: 'date "+%Y%m%d"'
     register: currdate
+    check_mode: no
+    tags:
+    - always
   - set_fact:
       currdate={{ currdate.stdout }}
+    tags:
+    - always
   - name: Create temporary archive directory
     file:
       path: "/tmp/backup/{{ currdate }}"
@@ -25,18 +30,48 @@
       paths: /ctr_cfg
       file_type: directory
     register: dockerdirs
-  - name: Backup each directory
-    community.general.archive:
-      path: "{{ item.path }}"
-      dest: /tmp/backup/{{ currdate }}/{{ item.path | basename }}.tgz
-      owner: ctrdata
-      group: ctrdata
-      format: gz
+  - name: Backup and upgrade
+    include_tasks: includes/docker_backup_upgrade.yml
     with_items: "{{ dockerdirs.files }}"
+    vars:
+      backup_dir: "/tmp/backup/{{ currdate }}"
+  # - name: Backup each directory
+  #   community.general.archive:
+  #     path: "{{ item.path }}"
+  #     dest: /tmp/backup/{{ currdate }}/{{ item.path | basename }}.tgz
+  #     owner: ctrdata
+  #     group: ctrdata
+  #     format: gz
+  #   when: no
   - name: Copy to backup NFS
-    copy:
-      src: /tmp/backup/{{ currdate }}
-      dest: /mnt/backup/
-      remote_src: yes
-      directory_mode: yes
-    become_user: ctrdata
+    command: 'su -c "cp -r /tmp/backup/{{ currdate }} /mnt/backup/" ctrdata'
+    when: not ansible_check_mode
+  - name: Clean up backups
+    file:
+      path: "/tmp/backup/{{ currdate }}"
+      state: absent
+    tags:
+    - cleanup
+  - name: Find backups to remove (keep last 5)
+    shell: 'ls -1tr /mnt/backup | head -n -5'
+    check_mode: no
+    register: oldBackups
+    tags:
+    - cleanup
+  - name: Remove old backups
+    file:
+      path: "/mnt/backup/{{ item }}"
+      state: absent
+    with_items: "{{ oldBackups.stdout_lines }}"
+    when: oldBackups is defined
+    tags:
+    - cleanup
+  - name: Notify Monitoring task complete
+    uri:
+      url: "https://hc-ping.com/{{ ping_id }}"
+      timeout: 10
+    register: pingresult
+    until: "pingresult is not failed"
+    retries: 5
+    delay: 30
+

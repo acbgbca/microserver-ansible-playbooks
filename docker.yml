@@ -26,6 +26,7 @@
   roles:
     - base_server
     - docker
+    - ansible_server
   
   tasks:
     - name: Docker macvlan network
@@ -42,6 +43,7 @@
       apt:
         name:
           - git
+          - acl
         state: present
     - name: Add devops to "{{ data_user }}"
       user:
@@ -65,6 +67,8 @@
         repo: git@github.com:acbgbca/microserver-docker.git
         dest: /ctr_cfg
         update: no
+        accept_hostkey: yes
+      become: no
       register: gitupdate
     - name: Fix Git ownership
       file:
@@ -87,7 +91,55 @@
         line: "192.168.0.201:/nfs/backup/docker        /mnt/backup     nfs     defaults        0 0"
         state: present
       notify: Mount backup
-
+    - name: Setup weekly backup task
+      template:
+        src: templates/docker-backup-upgrade
+        dest: /etc/cron.weekly/docker-backup-upgrade
+        owner: root
+        group: root
+        mode: '0755'
+      tags:
+      - backup
+# The version of ansible on the server won't currently work with this
+    # - name: Checkout Ansible playbooks
+    #   git:
+    #     repo: git@github.com:acbgbca/microserver-ansible-playbooks.git
+    #     dest: "/home/{{ ansible_user }}/ansible"
+    #     update: no
+    #     accept_hostkey: yes
+    #   become: no
+    # - name: Install password file
+    #   copy:
+    #     src: vault_password.txt
+    #     dest: "/home/{{ ansible_user }}/password.txt"
+    #     owner: "{{ ansible_user }}"
+    #     group: "{{ ansible_user }}"
+    #     mode: "0600"
+    # - name: Install hosts file
+    #   copy:
+    #     src: docker_localhosts
+    #     dest: "/home/{{ ansible_user }}/hosts"
+    #     owner: "{{ ansible_user }}"
+    #     group: "{{ ansible_user }}"
+    #     mode: "0600"
+    # - name: Install hosts file
+    #   copy:
+    #     src: requirements.yml
+    #     dest: "/home/{{ ansible_user }}/ansible/requirements.yml"
+    #     owner: "{{ ansible_user }}"
+    #     group: "{{ ansible_user }}"
+    #     mode: "0600"
+    # - name: Install Community Collections
+    #   shell: "ansible-galaxy collection install community.general"
+    # - name: Install weekly update job
+    #   cron: 
+    #     name: Docker backup and upgrade
+    #     minute: 0
+    #     hour: 3
+    #     weekday: 6
+    #     job: "ansible-playbook -i /home/{{ ansible_user }}/hosts /home/{{ ansible_user }}/ansible/docker-backup.yml --vault-password-file /home/{{ ansible_user }}/password.txt"
+    #     cron_file: docker-backup-upgrade
+    #     user: "{{ ansible_user }}"
   handlers:
     - name: Mount backup
       ansible.posix.mount:
