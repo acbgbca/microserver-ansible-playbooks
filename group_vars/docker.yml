@@ -4,26 +4,25 @@ docker_plugins:
     plugin: "grafana/loki-docker-driver:latest"
 docker_networks_bridge:
   - ctr-network
-docker_networks_nfs:
-  - name: videos
-    device: ":/nfs/videos"
-    host: 192.168.0.201
-    access: rw
-  - name: downloads
-    device: ":/nfs/downloads"
-    host: 192.168.0.201
-    access: rw
-  - name: pictures
-    device: ":/nfs/pictures"
-    host: 192.168.0.201
-    access: rw
-  - name: music
-    device: ":/nfs/music"
-    host: 192.168.0.201
-    access: rw
 docker_users:
   - ctrdata
   - devops
+nfs_mounts:
+  - local: "/mnt/videos"
+    remote: "/nfs/videos"
+    host: 192.168.0.201
+  - local: "/mnt/downloads"
+    remote: "/nfs/downloads"
+    host: 192.168.0.201
+  - local: "/mnt/pictures"
+    remote: "/nfs/pictures"
+    host: 192.168.0.201
+  - local: "/mnt/music"
+    remote: "/nfs/music"
+    host: 192.168.0.201
+  - local: "/mnt/backup"
+    remote: "/nfs/backup/docker"
+    host: 192.168.0.201
 data_user: ctrdata
 data_id: 9001
 ping_id: !vault |

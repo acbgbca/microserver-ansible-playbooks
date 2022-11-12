@@ -82,18 +82,13 @@
         group: "{{ data_user }}"
         recursive: yes
       when: gitupdate.changed
-    - name: Setup NFS backup directory
-      file:
-        path: "/mnt/backup"
-        state: directory
-    - name: Setup backup NFS mount
-      lineinfile:
-        path: /etc/fstab
-        backup: yes
-        search_string: '/mnt/backup'
-        line: "192.168.0.201:/nfs/backup/docker        /mnt/backup     nfs     defaults        0 0"
-        state: present
-      notify: Mount backup
+    - name: Setup NFS mounts
+      include_tasks:
+        file: includes/nfs_mounts.yml
+        apply:
+          tags: nfs
+      with_items: "{{ nfs_mounts }}"
+      tags: nfs
     - name: Setup weekly backup task
       template:
         src: templates/docker-backup-upgrade
@@ -143,8 +138,3 @@
     #     job: "ansible-playbook -i /home/{{ ansible_user }}/hosts /home/{{ ansible_user }}/ansible/docker-backup.yml --vault-password-file /home/{{ ansible_user }}/password.txt"
     #     cron_file: docker-backup-upgrade
     #     user: "{{ ansible_user }}"
-  handlers:
-    - name: Mount backup
-      ansible.posix.mount:
-        path: /mnt/backup
-        state: remounted
