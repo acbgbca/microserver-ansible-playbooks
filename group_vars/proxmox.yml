@@ -3,13 +3,13 @@ default_user: devops
 open_ports:
   # ssh
   - port: 22
-    proto: tcp
   # proxmox
   - port: 8006
-    proto: tcp
   # NFS
   - port: 2049
-    proto: tcp
+  # Node Exporter
+  - port: 9100
+    fromip: 192.168.0.202
 api_key: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           32663761363466313931353736326238393737656536656266333432336532376333336336313031

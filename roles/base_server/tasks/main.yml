@@ -38,7 +38,8 @@
     ufw:
       rule: allow
       port: "{{ item.port }}"
-      proto: "{{ item.proto }}"
+      proto: "{{ item.proto | default('tcp') }}"
+      from_ip: "{{ item.fromip | default('any') }}"
     with_items: "{{ open_ports }}"
   - name: Default firewall rules
     ufw:
