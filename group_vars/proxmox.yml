@@ -20,3 +20,28 @@ api_key: !vault |
           6565653565346463343566666237393163306436346139363464
 api_user: root@pam
 api_token_name: ansible
+nfs_sources:
+  - path: "/nfs/downloads"
+    src: "/mnt/pve/data8tb/files/downloads"
+    host: 192.168.0.202
+    opts: rw,sync,crossmnt,no_subtree_check
+  - path: "/nfs/videos"
+    src: "/mnt/pve/data8tb/files/videos"
+    host: 192.168.0.202
+    opts: rw,sync,crossmnt,no_subtree_check
+  - path: "/nfs/backup"
+    src: "/mnt/pve/data8tb/files/backup"
+    host: 192.168.0.202
+    opts: rw,sync,crossmnt,no_subtree_check
+  - path: "/nfs/music"
+    src: "/mnt/pve/data8tb/files/music"
+    host: 192.168.0.202
+    opts: rw,sync,crossmnt,no_subtree_check
+  - path: "/nfs/pictures"
+    src: "/mnt/pve/data8tb/files/pictures"
+    host: 192.168.0.202
+    opts: rw,sync,crossmnt,no_subtree_check
+  - path: "/nfs/paperless"
+    src: "/mnt/pve/data8tb/files/onedrive/paperless"
+    host: 192.168.0.202
+    opts: rw,sync,crossmnt,no_subtree_check

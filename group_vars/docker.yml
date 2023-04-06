@@ -23,6 +23,9 @@ nfs_mounts:
   - local: "/mnt/backup"
     remote: "/nfs/backup/docker"
     host: 192.168.0.201
+  - local: "/mnt/paperless"
+    remote: "/nfs/paperless"
+    host: 192.168.0.201
 data_user: ctrdata
 data_id: 9001
 ping_id: !vault |

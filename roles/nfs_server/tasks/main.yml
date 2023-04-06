@@ -1,0 +1,23 @@
+---
+- name: Install NFS Server.
+  apt:
+    name: nfs-kernel-server
+    state: present
+- block:
+  - name: Setup bind mounts
+    ansible.posix.mount:
+      path: "{{ item.path }}"
+      src: "{{ item.src }}"
+      opts: bind,nofail
+      state: mounted
+      fstype: none
+    with_items: "{{ nfs_sources }}"
+  - name: Add to exports
+    lineinfile:
+      path: /etc/exports
+      state: present
+      line: "{{ item.path }} {{ item.host }}({{item.opts}})"
+    with_items: "{{ nfs_sources }}"
+    notify:
+      - restart nfs
+  when: nfs_sources is defined
