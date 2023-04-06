@@ -22,7 +22,14 @@
            line="deb http://download.proxmox.com/debian/pve bullseye pve-no-subscription"
            state=present
            backup=yes
-    - name: install Node Exporter
+    - name: Install NFS Server.
       apt:
-        pkg:
-        - prometheus-node-exporter
+        name: nfs-kernel-server
+        state: present
+    - name: Mount bind volumes
+      ansible.posix.mount:
+        path: /nfs/paperless
+        src: /mnt/pve/data8tb/files/onedrive/paperless
+        opts: bind,nofail
+        state: mounted
+        fstype: none
