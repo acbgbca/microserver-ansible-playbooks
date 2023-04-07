@@ -1,0 +1,9 @@
+# Scheduled sync for all mirrored items
+# Sync is run hourly, and offset by the number of items we have
+
+SHELL=/bin/sh
+PATH=PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+{% for item in cloud_sources.pathsToMirror %}
+{{ 59 // cloud_sources.pathsToMirror|length * loop.index }} * * * * {{ cloud_sources.rclone_user }} rclone sync onedrive:{{ item.dir }} {{ item.path | default(cloud_sources.default_path) }}{{ item.dir }}
+{% endfor %}

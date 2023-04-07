@@ -1,0 +1,19 @@
+---
+- name: Install RClone
+  apt:
+    name: rclone
+    state: present
+- block:
+  - name: "Create {{ item.path | default(cloud_sources.default_path) }}{{ item.dir }}"
+    ansible.builtin.file:
+      path: "{{ item.path | default(cloud_sources.default_path) }}{{ item.dir }}"
+      state: directory
+      owner: "{{  item.owner | default(cloud_sources.default_owner) }}"
+      group: "{{  item.owner | default(cloud_sources.default_owner) }}"
+      mode: 0775
+    with_items: "{{ cloud_sources.pathsToMirror }}"
+  - name: "Setup scheduled sync"
+    ansible.builtin.template:
+      src: templates/cloud_mirror.j2
+      dest: /etc/cron.d/cloud_mirror
+  when: cloud_sources.pathsToMirror is defined
