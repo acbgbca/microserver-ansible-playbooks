@@ -48,9 +48,12 @@ nfs_sources:
 cloud_sources:
   default_path: "/mnt/pve/data8tb/files/onedrive/"
   default_owner: ctrdata
-  rclone_user: devops
+  rclone_user: ctrdata
   pathsToMirror:
     - dir: books
     - dir: Desktop
     - dir: Documents
   pathsToSync:
+paperless:
+  cloud_dir: paperless/consume
+  consume_dir: /mnt/pve/data8tb/files/onedrive/paperless/consume

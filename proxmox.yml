@@ -26,3 +26,26 @@
            line="deb http://download.proxmox.com/debian/pve bullseye pve-no-subscription"
            state=present
            backup=yes
+    - name: Setup script directory
+      ansible.builtin.file:
+        path: "/home/{{ cloud_sources.rclone_user }}/bin"
+        state: directory
+        owner: "{{  cloud_sources.rclone_user }}"
+        group: "{{  cloud_sources.rclone_user }}"
+        mode: 0775
+      tags: paperless
+    - name: Paperless Consume Script
+      ansible.builtin.template:
+        src: templates/paperless_consume.sh.j2
+        dest: "/home/{{ cloud_sources.rclone_user }}/bin/paperless_consume.sh"
+        owner: "{{  cloud_sources.rclone_user }}"
+        group: "{{  cloud_sources.rclone_user }}"
+        mode : 0775
+      tags: paperless
+    - name: Paperless Consume Cron
+      ansible.builtin.cron:
+        name: "Download Files for Paperless"
+        minute: "*/15"
+        job: "/home/{{ cloud_sources.rclone_user }}/bin/paperless_consume.sh >> /var/log/paperless"
+        user: "{{  cloud_sources.rclone_user }}"
+      tags: paperless
