@@ -3,8 +3,15 @@
   apt:
     name: rclone
     state: present
+- name: Setup script directory
+  ansible.builtin.file:
+    path: "/home/{{ cloud_sources.rclone_user }}/bin"
+    state: directory
+    owner: "{{  cloud_sources.rclone_user }}"
+    group: "{{  cloud_sources.rclone_user }}"
+    mode: 0775
 - block:
-  - name: "Create {{ item.path | default(cloud_sources.default_path) }}{{ item.dir }}"
+  - name: Create Mirror Directories
     ansible.builtin.file:
       path: "{{ item.path | default(cloud_sources.default_path) }}{{ item.dir }}"
       state: directory
@@ -12,8 +19,42 @@
       group: "{{  item.owner | default(cloud_sources.default_owner) }}"
       mode: 0775
     with_items: "{{ cloud_sources.pathsToMirror }}"
-  - name: "Setup scheduled sync"
+  - name: Setup Mirror Script
     ansible.builtin.template:
-      src: templates/cloud_mirror.j2
-      dest: /etc/cron.d/cloud_mirror
+      src: templates/cloud_mirror.sh.j2
+      dest: "/home/{{ cloud_sources.rclone_user }}/bin/cloud_mirror.sh"
+      owner: "{{  cloud_sources.rclone_user }}"
+      group: "{{  cloud_sources.rclone_user }}"
+      mode : 0775
+  - name: "Schedule Mirror Script"
+    ansible.builtin.cron:
+      name: "Mirror files"
+      minute: "15"
+      hour: "3"
+      job: "/home/{{ cloud_sources.rclone_user }}/bin/cloud_mirror.sh >> /var/log/cloud_mirror"
+      user: "{{  cloud_sources.rclone_user }}"
   when: cloud_sources.pathsToMirror is defined
+- block:
+  - name: Create Sync Directories
+    ansible.builtin.file:
+      path: "{{ item.src }}"
+      state: directory
+      owner: "{{  item.owner | default(cloud_sources.default_owner) }}"
+      group: "{{  item.owner | default(cloud_sources.default_owner) }}"
+      mode: 0775
+    with_items: "{{ cloud_sources.pathsToSync }}"
+  - name: Setup Sync Script
+    ansible.builtin.template:
+      src: templates/cloud_sync.sh.j2
+      dest: "/home/{{ cloud_sources.rclone_user }}/bin/cloud_sync.sh"
+      owner: "{{  cloud_sources.rclone_user }}"
+      group: "{{  cloud_sources.rclone_user }}"
+      mode : 0775
+  - name: "Schedule Sync Script"
+    ansible.builtin.cron:
+      name: "Sync files"
+      minute: "15"
+      hour: "4"
+      job: "/home/{{ cloud_sources.rclone_user }}/bin/cloud_sync.sh >> /var/log/cloud_sync"
+      user: "{{  cloud_sources.rclone_user }}"
+  when: cloud_sources.pathsToSync is defined

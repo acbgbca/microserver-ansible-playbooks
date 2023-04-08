@@ -1,0 +1,10 @@
+#!/bin/bash
+# Scheduled sync for all local items
+
+set -e
+
+{% for item in cloud_sources.pathsToSync %}
+echo Syncing {{ item.src }}
+rclone sync {{ item.src }} onedrive:{{ item.dest }}
+{% endfor %}
+curl https://uptimekuma.internal.{{ domain }}/api/push/okVfrdZbds?status=up&msg=OK&ping=

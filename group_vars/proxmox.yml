@@ -20,6 +20,13 @@ api_key: !vault |
           6565653565346463343566666237393163306436346139363464
 api_user: root@pam
 api_token_name: ansible
+domain: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          35353034623463626234386534653031323262323363393830623937643664343934666130653735
+          3536636134363435343539646539643862386136343338310a623333386233653831626133613638
+          39356537643465396231343961373938386364653864356464323766623165366336663264353464
+          6665356463626231390a323534626333616335353235316336663766373966316437663462643935
+          6339
 nfs_sources:
   - path: "/nfs/downloads"
     src: "/mnt/pve/data8tb/files/downloads"
@@ -54,6 +61,10 @@ cloud_sources:
     - dir: Desktop
     - dir: Documents
   pathsToSync:
+    - src: /mnt/pve/data8tb/files/onedrive/paperless/export
+      dest: paperless/export
+    - src: /mnt/pve/data8tb/files/onedrive/paperless/media
+      dest: paperless/media
 paperless:
   cloud_dir: paperless/consume
   consume_dir: /mnt/pve/data8tb/files/onedrive/paperless/consume
