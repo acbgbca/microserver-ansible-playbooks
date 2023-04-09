@@ -1,0 +1,20 @@
+#!/bin/bash
+# Image Syncronisation
+# * Copies files from cloud upload to local directory
+# * Pushes the file back up to the shared cloud image directory
+# * Deletes the file from the upload directory
+# Will only delete if all other steps complete successfully
+
+set -e
+
+{% for item in image_sync.srcPaths %}
+files=$(rclone lsf onedrive:{{ item }} -R --files-only)
+
+for file in ${files[@]}; do
+    echo "Moving file $file"
+    rclone copyto onedrive:{{ item }}/$file {{ image_sync.local_dest }}/$file
+    rclone copyto {{ image_sync.local_dest }}/$file onedrive:{{ image_sync.cloud_dest }}/$file
+    rclone deletefile onedrive:{{ item }}/$file
+done;
+{% endfor %}
+curl https://uptimekuma.internal.{{ domain }}/api/push/sE5hshzK2F?status=up&msg=OK&ping=

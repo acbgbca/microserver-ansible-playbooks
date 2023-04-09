@@ -68,3 +68,9 @@ cloud_sources:
 paperless:
   cloud_dir: paperless/consume
   consume_dir: /mnt/pve/data8tb/files/onedrive/paperless/consume
+image_sync:
+  srcPaths:
+    - "'Pictures Jo'/'Camera Roll'"
+    - "'Pictures'/'Camera Roll'"
+  local_dest: /mnt/pve/data8tb/files/pictures/family
+  cloud_dest: "'Family Pictures'"

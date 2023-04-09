@@ -49,3 +49,19 @@
         job: "/home/{{ cloud_sources.rclone_user }}/bin/paperless_consume.sh >> /var/log/paperless"
         user: "{{  cloud_sources.rclone_user }}"
       tags: paperless
+    - name: Image Sync Script
+      ansible.builtin.template:
+        src: templates/image_sync.sh.j2
+        dest: "/home/{{ cloud_sources.rclone_user }}/bin/image_sync.sh"
+        owner: "{{  cloud_sources.rclone_user }}"
+        group: "{{  cloud_sources.rclone_user }}"
+        mode : 0775
+      tags: imagesync
+    - name: Image Sync Cron
+      ansible.builtin.cron:
+        name: "Image Sync"
+        minute: "15"
+        hour: "5"
+        job: "/home/{{ cloud_sources.rclone_user }}/bin/image_sync.sh >> /var/log/imagesync"
+        user: "{{  cloud_sources.rclone_user }}"
+      tags: imagesync
