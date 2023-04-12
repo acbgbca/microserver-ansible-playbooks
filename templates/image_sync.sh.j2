@@ -7,14 +7,20 @@
 
 set -e
 
+echo "Running Image Sync"
+
 {% for item in image_sync.srcPaths %}
+echo "Looking for images in {{ item }}"
 files=$(rclone lsf onedrive:{{ item }} -R --files-only)
 
 for file in ${files[@]}; do
-    echo "Moving file $file"
-    rclone copyto onedrive:{{ item }}/$file {{ image_sync.local_dest }}/$file
-    rclone copyto {{ image_sync.local_dest }}/$file onedrive:{{ image_sync.cloud_dest }}/$file
-    rclone deletefile onedrive:{{ item }}/$file
+    echo "Moving file $file from {{ item }} to {{ image_sync.local_dest }}"
+    rclone copyto onedrive:{{ item }}/$file {{ image_sync.local_dest }}/$file" --log-level INFO --stats 0
+    rclone copyto {{ image_sync.local_dest }}/$file onedrive:{{ image_sync.cloud_dest }}/$file" --log-level INFO --stats 0
+    rclone deletefile onedrive:{{ item }}/$file" --log-level INFO --stats 0
 done;
 {% endfor %}
-curl https://uptimekuma.internal.{{ domain }}/api/push/sE5hshzK2F?status=up&msg=OK&ping=
+
+echo "Image sync Complete"
+
+curl -w "\n" https://uptimekuma.internal.{{ domain }}/api/push/sE5hshzK2F?status=up&msg=OK&ping=

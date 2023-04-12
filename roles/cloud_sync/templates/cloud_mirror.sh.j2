@@ -3,8 +3,14 @@
 
 set -e
 
+echo "Starting Cloud Mirror"
+
 {% for item in cloud_sources.pathsToMirror %}
-echo Mirroring {{ item.dir }}
-rclone sync onedrive:{{ item.dir }} {{ item.path | default(cloud_sources.default_path) }}{{ item.dir }}
+echo "Mirroring {{ item.dir }}"
+rclone sync onedrive:{{ item.dir }} {{ item.path | default(cloud_sources.default_path) }}{{ item.dir }} --log-level INFO --stats 0
+echo "Finished {{ item.dir }}"
 {% endfor %}
-curl https://uptimekuma.internal.{{ domain }}/api/push/IbvjzEGD8e?status=up&msg=OK&ping=
+
+echo "Finished Cloud Mirror"
+
+curl -w "\n" https://uptimekuma.internal.{{ domain }}/api/push/IbvjzEGD8e?status=up&msg=OK&ping=

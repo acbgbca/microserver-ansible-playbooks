@@ -1,11 +1,11 @@
 #!/bin/bash
 
 set -e
-
-files=$(rclone lsf onedrive:{{ paperless.cloud_dir }})
+IFS=$'\n'; set -f
+files=($(rclone lsf onedrive:{{ paperless.cloud_dir }}))
 
 for file in "${files[@]}"; do
-    echo "Moving file $file"
-    rclone copyto onedrive:{{ paperless.cloud_dir }}/"$file" {{ paperless.consume_dir }}/"$file"
-    rclone deletefile onedrive:{{ paperless.cloud_dir }}/"$file"
+    echo "Moving file $file from {{ paperless.cloud_dir }} to {{ paperless.consume_dir }}"
+    rclone copyto onedrive:{{ paperless.cloud_dir }}/"$file" {{ paperless.consume_dir }}/"$file" --log-level INFO --stats 0
+    rclone deletefile onedrive:{{ paperless.cloud_dir }}/"$file" --log-level INFO --stats 0
 done;

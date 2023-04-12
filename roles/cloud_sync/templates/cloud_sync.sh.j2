@@ -3,8 +3,14 @@
 
 set -e
 
+echo "Starting Cloud Sync"
+
 {% for item in cloud_sources.pathsToSync %}
-echo Syncing {{ item.src }}
-rclone sync {{ item.src }} onedrive:{{ item.dest }}
+echo "Syncing {{ item.src }}"
+rclone sync {{ item.src }} onedrive:{{ item.dest }} --log-level INFO --stats 0
+echo "Finished {{ item.src }}"
 {% endfor %}
-curl https://uptimekuma.internal.{{ domain }}/api/push/okVfrdZbds?status=up&msg=OK&ping=
+
+echo "Finished Cloud Sync"
+
+curl -w "\n" https://uptimekuma.internal.{{ domain }}/api/push/okVfrdZbds?status=up&msg=OK&ping=
