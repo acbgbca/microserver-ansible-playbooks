@@ -65,6 +65,8 @@ cloud_sources:
       dest: paperless/export
     - src: /mnt/pve/data8tb/files/onedrive/paperless/media
       dest: paperless/media
+    - src: /mnt/pve/data8tb/files/backup/docker
+      dest: backup/docker
 paperless:
   cloud_dir: paperless/consume
   consume_dir: /mnt/pve/data8tb/files/onedrive/paperless/consume

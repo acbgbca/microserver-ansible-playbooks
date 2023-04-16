@@ -31,7 +31,7 @@
       name: "Mirror files"
       minute: "15"
       hour: "3"
-      job: "/home/{{ cloud_sources.rclone_user }}/bin/cloud_mirror.sh > /var/log/cloud_mirror"
+      job: "/home/{{ cloud_sources.rclone_user }}/bin/cloud_mirror.sh > /var/log/cloud_mirror 2>&1"
       user: "{{  cloud_sources.rclone_user }}"
   when: cloud_sources.pathsToMirror is defined
 - block:
@@ -55,6 +55,6 @@
       name: "Sync files"
       minute: "15"
       hour: "4"
-      job: "/home/{{ cloud_sources.rclone_user }}/bin/cloud_sync.sh > /var/log/cloud_sync"
+      job: "/home/{{ cloud_sources.rclone_user }}/bin/cloud_sync.sh > /var/log/cloud_sync 2>&1"
       user: "{{  cloud_sources.rclone_user }}"
   when: cloud_sources.pathsToSync is defined

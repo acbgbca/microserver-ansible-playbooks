@@ -79,7 +79,7 @@
         name: "Image Sync"
         minute: "15"
         hour: "5"
-        job: "/home/{{ cloud_sources.rclone_user }}/bin/image_sync.sh >> /var/log/imagesync"
+        job: "/home/{{ cloud_sources.rclone_user }}/bin/image_sync.sh > /var/log/imagesync 2>&1"
         user: "{{  cloud_sources.rclone_user }}"
       tags: imagesync
     - name: Install promtail
