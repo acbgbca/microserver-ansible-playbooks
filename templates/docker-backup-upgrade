@@ -4,17 +4,10 @@ set -e
 
 cd /ctr_cfg
 
-# Backup docker configuration
-/ctr_cfg/backup.sh /ctr_cfg /tmp/backup
-
-chown -R {{ data_user }}.{{ data_user }} /tmp/backup
-
-su -c "cp -r /tmp/backup/* /mnt/backup/" {{ data_user }}
+# Backup and upgrade docker containers
+/ctr_cfg/backupupgrade.sh /ctr_cfg /tmp/backup
 
 rm -rf /tmp/backup/*
-
-# Upgrade docker containers
-su -c "/ctr_cfg/upgrade.sh /ctr_cfg" {{ data_user }}
 
 # Delete all but the latest 5 backups
 cd /mnt/backup
@@ -22,4 +15,3 @@ su -c "ls -1tr | head -n -5 | xargs -d '\n' rm -rf --" {{ data_user }}
 
 # Call monitoring to notify that job finished successfully
 curl -m 10 --retry 5 https://hc-ping.com/{{ping_id}}
-

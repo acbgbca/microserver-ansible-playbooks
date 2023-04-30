@@ -42,14 +42,6 @@
           - subnet: "192.168.0.0/24"
             gateway: "192.168.0.1"
             iprange: "192.168.0.64/26"
-    - name: Docker Daemon configuration
-      copy:
-        src: docker_files/daemon.json
-        dest: /etc/docker/daemon.json
-        owner: root
-        group: root
-        mode: 0644
-        backup: yes
     - name: Install git
       apt:
         name:
