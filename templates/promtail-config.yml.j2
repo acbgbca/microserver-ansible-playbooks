@@ -15,6 +15,10 @@ scrape_configs:
       host: {{ inventory_hostname }}
       __path__: /var/log/paperless
   - labels:
+      job: calibre
+      host: {{ inventory_hostname }}
+      __path__: /var/log/calibre
+  - labels:
       job: cloud_mirror
       host: {{ inventory_hostname }}
       __path__: /var/log/cloud_mirror

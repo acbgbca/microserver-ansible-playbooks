@@ -50,7 +50,7 @@
         owner: "{{  cloud_sources.rclone_user }}"
         group: "{{  cloud_sources.rclone_user }}"
         mode: 0775
-      tags: paperless
+      tags: paperless,calibre
     - name: Paperless Consume Script
       ansible.builtin.template:
         src: templates/paperless_consume.sh.j2
@@ -66,6 +66,21 @@
         job: "/home/{{ cloud_sources.rclone_user }}/bin/paperless_consume.sh > /var/log/paperless 2>&1"
         user: "{{  cloud_sources.rclone_user }}"
       tags: paperless
+    - name: Calibre Import Script
+      ansible.builtin.template:
+        src: templates/calibre_import.sh.j2
+        dest: "/home/{{ cloud_sources.rclone_user }}/bin/calibre_import.sh"
+        owner: "{{  cloud_sources.rclone_user }}"
+        group: "{{  cloud_sources.rclone_user }}"
+        mode : 0775
+      tags: calibre
+    - name: Calibre Import Cron
+      ansible.builtin.cron:
+        name: "Download Files for Calibre"
+        minute: "*/5"
+        job: "/home/{{ cloud_sources.rclone_user }}/bin/calibre_import.sh > /var/log/calibre 2>&1"
+        user: "{{  cloud_sources.rclone_user }}"
+      tags: calibre
     - name: Image Sync Script
       ansible.builtin.template:
         src: templates/image_sync.sh.j2

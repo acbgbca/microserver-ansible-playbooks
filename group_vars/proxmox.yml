@@ -52,6 +52,14 @@ nfs_sources:
     src: "/mnt/pve/data8tb/files/onedrive/paperless"
     host: 192.168.0.202
     opts: rw,sync,crossmnt,no_subtree_check
+  - path: "/nfs/books"
+    src: "/mnt/pve/data8tb/files/backup/calibre"
+    host: 192.168.0.202
+    opts: rw,sync,crossmnt,no_subtree_check
+  - path: "/nfs/calibre"
+    src: "/mnt/pve/data8tb/files/onedrive/calibre"
+    host: 192.168.0.202
+    opts: rw,sync,crossmnt,no_subtree_check
 cloud_sources:
   default_path: "/mnt/pve/data8tb/files/onedrive/"
   default_owner: ctrdata
@@ -67,9 +75,14 @@ cloud_sources:
       dest: paperless/media
     - src: /mnt/pve/data8tb/files/backup/docker
       dest: backup/docker
+    - src: /mnt/pve/data8tb/files/onedrive/calibre/books
+      dest: calibre/books
 paperless:
   cloud_dir: paperless/consume
   consume_dir: /mnt/pve/data8tb/files/onedrive/paperless/consume
+calibre:
+  cloud_dir: calibre/import
+  consume_dir: /mnt/pve/data8tb/files/onedrive/calibre/import
 image_sync:
   srcPaths:
     - "'Pictures Jo'/'Camera Roll'"

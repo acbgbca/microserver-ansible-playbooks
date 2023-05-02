@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+IFS=$'\n'; set -f
+files=($(rclone lsf onedrive:{{ calibre.cloud_dir }}))
+
+for file in "${files[@]}"; do
+    echo "Moving file $file from {{ calibre.cloud_dir }} to {{ calibre.consume_dir }}"
+    rclone copyto onedrive:{{ calibre.cloud_dir }}/"$file" {{ calibre.consume_dir }}/"$file" --log-level INFO --stats 0
+    rclone deletefile onedrive:{{ calibre.cloud_dir }}/"$file" --log-level INFO --stats 0
+done;
