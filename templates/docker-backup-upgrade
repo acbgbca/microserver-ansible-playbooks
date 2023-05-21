@@ -5,7 +5,7 @@ set -e
 cd /ctr_cfg
 
 # Backup and upgrade docker containers
-/ctr_cfg/backupupgrade.sh /ctr_cfg /tmp/backup
+/ctr_cfg/backupupgrade.sh /ctr_cfg /tmp/backup > /var/log/docker-backup-upgrade.log
 
 rm -rf /tmp/backup/*
 
