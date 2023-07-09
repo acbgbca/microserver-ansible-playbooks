@@ -60,6 +60,10 @@ nfs_sources:
     src: "/mnt/pve/data8tb/files/onedrive/calibre"
     host: 192.168.0.202
     opts: rw,sync,crossmnt,no_subtree_check
+  - path: "/nfs/roms"
+    src: "/mnt/pve/data8tb/files/roms"
+    host: 192.168.0.202
+    opts: rw,sync,crossmnt,no_subtree_check
 cloud_sources:
   default_path: "/mnt/pve/data8tb/files/onedrive/"
   default_owner: ctrdata
