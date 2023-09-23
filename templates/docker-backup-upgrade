@@ -1,17 +1,19 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-cd /ctr_cfg
+(
+    cd /ctr_cfg
 
-# Backup and upgrade docker containers
-/ctr_cfg/backupupgrade.sh /ctr_cfg /tmp/backup > /var/log/docker-backup-upgrade.log
+    # Backup and upgrade docker containers
+    /ctr_cfg/backupupgrade.sh /ctr_cfg /tmp/backup
 
-rm -rf /tmp/backup/*
+    rm -rf /tmp/backup/*
 
-# Delete all but the latest 5 backups
-cd /mnt/backup
-su -c "ls -1tr | head -n -5 | xargs -d '\n' rm -rf --" {{ data_user }}
+    # Delete all but the latest 5 backups
+    cd /mnt/backup
+    su -c "ls -1tr | head -n -5 | xargs -d '\n' rm -rf --" {{ data_user }}
 
-# Call monitoring to notify that job finished successfully
-curl -m 10 --retry 5 https://hc-ping.com/{{ping_id}}
+    # Call monitoring to notify that job finished successfully
+    curl -m 10 --retry 5 https://hc-ping.com/{{ping_id}}
+) 2>&1 | tee /var/log/docker-backup-upgrade.log
