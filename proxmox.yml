@@ -109,6 +109,29 @@
         dest: "/etc/promtail/config.yml"
       tags: logging
       notify: Restart Promtail
+    - name: Install smartmontools
+      apt:
+        name: smartmontools
+        state: present
+        update_cache: yes
+      tags: smart
+    - name: Download scrutiny
+      ansible.builtin.get_url:
+        url: https://github.com/AnalogJ/scrutiny/releases/download/v0.7.2/scrutiny-collector-metrics-linux-amd64
+        mode: 755
+        dest: "/home/{{ cloud_sources.rclone_user }}/bin/scrutiny-collector-metrics-linux-amd64"
+        owner: "{{  cloud_sources.rclone_user }}"
+        group: "{{  cloud_sources.rclone_user }}"
+      tags: smart
+    - name: Scrutiny cron
+      ansible.builtin.cron:
+        name: "Scrutiny"
+        hour: "0"
+        minute: "15"
+        job: "/home/{{ cloud_sources.rclone_user }}/bin/scrutiny-collector-metrics-linux-amd64 run --api-endpoint http://192.168.0.202:3200 > /var/log/scrutiny 2>&1"
+        user: "root"
+      tags: smart
+
 
   handlers:
   - name: Restart Promtail
