@@ -30,3 +30,7 @@ scrape_configs:
       job: image_sync
       host: {{ inventory_hostname }}
       __path__: /var/log/imagesync
+  - labels:
+      job: scrutiny
+      host: {{ inventory_hostname }}
+      __path__: /var/log/scrutiny
