@@ -123,12 +123,28 @@
         owner: "{{  cloud_sources.rclone_user }}"
         group: "{{  cloud_sources.rclone_user }}"
       tags: smart
+    - name: Setup config directory
+      ansible.builtin.file:
+        path: "/opt/scrutiny/config/"
+        state: directory
+        owner: "{{  cloud_sources.rclone_user }}"
+        group: "{{  cloud_sources.rclone_user }}"
+        mode: 0775
+      tags: smart
+    - name: Scrutiny config file
+      ansible.builtin.template:
+        src: templates/scrutiny_collector.yaml
+        dest: "/opt/scrutiny/config/collector.yaml"
+        owner: "{{  cloud_sources.rclone_user }}"
+        group: "{{  cloud_sources.rclone_user }}"
+        mode : 0664
+      tags: smart
     - name: Scrutiny cron
       ansible.builtin.cron:
         name: "Scrutiny"
         hour: "0"
         minute: "15"
-        job: "/home/{{ cloud_sources.rclone_user }}/bin/scrutiny-collector-metrics-linux-amd64 run --api-endpoint http://192.168.0.202:3200 > /var/log/scrutiny 2>&1"
+        job: "/home/{{ cloud_sources.rclone_user }}/bin/scrutiny-collector-metrics-linux-amd64 run > /var/log/scrutiny 2>&1"
         user: "root"
       tags: smart
 
