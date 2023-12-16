@@ -1,0 +1,21 @@
+---
+- name: Install Samba Server.
+  apt:
+    name: samba
+    state: present
+- block:
+  - name: Add share
+    blockinfile:
+      path: /etc/samba/smb.conf
+      marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }}"
+      block: |
+        [{{ item.name }}]
+          comment = {{ item.name }}
+          path = {{ item.path }}
+          browseable = {{ item.browseable | default("yes") }}
+          read only = {{ item.readonly | default("yes") }}
+          guest ok = {{ item.guest | default("no") }}
+    with_items: "{{ samba_sources }}"
+    notify:
+      - restart samba
+  when: samba_sources is defined

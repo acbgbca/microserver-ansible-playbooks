@@ -10,6 +10,11 @@ open_ports:
   # Node Exporter
   - port: 9100
     fromip: 192.168.0.202
+  # Samba
+  - port: 137
+  - port: 138
+  - port: 139
+  - port: 445
 api_key: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           32663761363466313931353736326238393737656536656266333432336532376333336336313031
@@ -64,6 +69,19 @@ nfs_sources:
     src: "/mnt/pve/data8tb/files/roms"
     host: 192.168.0.202
     opts: rw,sync,crossmnt,no_subtree_check
+samba_sources:
+  - name: videos
+    path: "/nfs/videos"
+    guest: "yes"
+  - name: music
+    path: "/nfs/music"
+    guest: "yes"
+  - name: pictures
+    path: "/nfs/pictures"
+    guest: "yes"
+  - name: roms
+    path: "/nfs/roms"
+    guest: "yes"
 cloud_sources:
   default_path: "/mnt/pve/data8tb/files/onedrive/"
   default_owner: ctrdata

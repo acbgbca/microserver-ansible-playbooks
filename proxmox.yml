@@ -12,11 +12,14 @@
         cache_valid_time: 3600
 
   roles:
-    - base_server
+    - role: base_server
+      tags: baseserver
     - role: nfs_server
       tags: nfs
     - role: cloud_sync
       tags: cloudsync
+    - role: samba_server
+      tags: samba
   
   tasks:
     - name: Remove Proxmox Enterprise Repository
