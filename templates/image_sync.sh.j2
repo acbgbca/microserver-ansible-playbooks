@@ -1,9 +1,7 @@
 #!/bin/bash
 # Image Syncronisation
-# * Copies files from cloud upload to local directory
-# * Pushes the file back up to the shared cloud image directory
-# * Deletes the file from the upload directory
-# Will only delete if all other steps complete successfully
+# * Uses rsync to server-side copy from camera roll to family photos
+# * Use rync to copy the files from onedrive down to the server
 
 set -e
 
@@ -15,9 +13,8 @@ files=$(rclone lsf onedrive:{{ item }} -R --files-only)
 
 for file in ${files[@]}; do
     echo "Moving file $file from {{ item }} to {{ image_sync.local_dest }}"
-    rclone copyto onedrive:{{ item }}/"$file" {{ image_sync.local_dest }}/"$file" --log-level INFO --stats 0
-    rclone copyto {{ image_sync.local_dest }}/"$file" onedrive:{{ image_sync.cloud_dest }}/"$file" --log-level INFO --stats 0
-    rclone deletefile onedrive:{{ item }}/"$file" --log-level INFO --stats 0
+    rclone moveto onedrive:{{ item }}/"$file" onedrive:{{ image_sync.cloud_dest }}/"$file" --log-level INFO --stats 0
+    rclone copyto onedrive:{{ image_sync.cloud_dest }}/"$file" {{ image_sync.local_dest }}/"$file" --log-level INFO --stats 0
 done;
 {% endfor %}
 
