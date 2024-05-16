@@ -9,12 +9,17 @@ echo "Running Image Sync"
 
 {% for item in image_sync.srcPaths %}
 echo "Looking for images in {{ item }}"
-files=$(rclone lsf onedrive:{{ item }} -R --files-only)
+readarray -t files < <(rclone lsf onedrive:{{ item }} -R --files-only)
+{% raw %}
+length=${#files[@]}
+count=1;
+{% endraw %}
 
-for file in ${files[@]}; do
-    echo "Moving file $file from {{ item }} to {{ image_sync.local_dest }}"
+for file in "${files[@]}"; do
+    echo "Moving file $count/$length '$file' from {{ item }} to {{ image_sync.local_dest }}"
     rclone moveto onedrive:{{ item }}/"$file" onedrive:{{ image_sync.cloud_dest }}/"$file" --log-level INFO --stats 0
     rclone copyto onedrive:{{ image_sync.cloud_dest }}/"$file" {{ image_sync.local_dest }}/"$file" --log-level INFO --stats 0
+    count=$((count+1))
 done;
 {% endfor %}
 
