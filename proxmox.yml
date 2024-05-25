@@ -54,21 +54,34 @@
         group: "{{  cloud_sources.rclone_user }}"
         mode: 0775
       tags: paperless,calibre
-    - name: Paperless Consume Script
+    - name: Generate Scripts
       ansible.builtin.template:
-        src: templates/paperless_consume.sh.j2
-        dest: "/home/{{ cloud_sources.rclone_user }}/bin/paperless_consume.sh"
+        src: templates/{{  item.filename }}.j2
+        dest: "/home/{{ cloud_sources.rclone_user }}/bin/{{ item.filename }}"
         owner: "{{  cloud_sources.rclone_user }}"
         group: "{{  cloud_sources.rclone_user }}"
         mode : 0775
-      tags: paperless
-    - name: Paperless Consume Cron
+      with_items: "{{ cron_jobs }}"
+      tags: cron
+    - name: Setup cron jobs
       ansible.builtin.cron:
-        name: "Download Files for Paperless"
-        minute: "*/15"
-        job: "/home/{{ cloud_sources.rclone_user }}/bin/paperless_consume.sh > /var/log/paperless 2>&1"
+        name: "{{ item.name }}"
+        minute: "{{ item.cronMinute | default('*') }}"
+        job: "/home/{{ cloud_sources.rclone_user }}/bin/{{ item.filename }} > {{ item.logfile }} 2>&1"
         user: "{{  cloud_sources.rclone_user }}"
-      tags: paperless
+      with_items: "{{ cron_jobs }}"
+      tags: cron
+    - name: Setup log files
+      ansible.builtin.file:
+        path: "{{ item.logfile }}"
+        state: touch
+        owner: "{{  cloud_sources.rclone_user }}"
+        group: "{{  cloud_sources.rclone_user }}"
+        modification_time: preserve
+        access_time: preserve
+        mode: 0664
+      with_items: "{{ cron_jobs }}"
+      tags: cron
     - name: Calibre Import Script
       ansible.builtin.template:
         src: templates/calibre_import.sh.j2

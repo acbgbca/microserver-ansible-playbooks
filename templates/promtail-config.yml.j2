@@ -34,3 +34,7 @@ scrape_configs:
       job: scrutiny
       host: {{ inventory_hostname }}
       __path__: /var/log/scrutiny
+  - labels:
+      job: cloudflare_events
+      host: {{ inventory_hostname }}
+      __path__: /var/log/cloudflare

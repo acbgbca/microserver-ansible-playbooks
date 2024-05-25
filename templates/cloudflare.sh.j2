@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -e
+
+start=$(date -u -d '1 hour ago' "+%Y-%m-%dT%H:00:00Z")
+end=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
+
+echo '{ "query":
+  "query ListFirewallEvents($zoneTag: string, $filter: FirewallEventsAdaptiveFilter_InputObject) {
+    viewer {
+      zones(filter: { zoneTag: $zoneTag }) {
+        firewallEventsAdaptive(
+          filter: $filter
+          limit: 100
+          orderBy: [datetime_DESC]
+        ) {
+          datetime
+          action
+          description
+          ruleId
+          rulesetId
+          clientAsn
+          clientASNDescription
+          clientCountryName
+          clientIP
+          clientIPClass
+          clientRequestHTTPHost
+          clientRequestPath
+          clientRequestQuery
+          source
+          userAgent
+        }
+      }
+    }
+  }",
+  "variables": {
+    "zoneTag": "{{ item.params.zoneTag }}",
+    "filter": {
+      "datetime_geq": "'${start}'",
+      "datetime_leq": "'${end}'",
+      "clientRequestPath_neq": "/"
+    }
+  }
+}' | tr -d '\n' | curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Email: {{ item.params.email }}" \
+  -H "Authorization: Bearer {{ item.params.apiToken }}" \
+  -s \
+  -d @- \
+  https://api.cloudflare.com/client/v4/graphql/ | jq -c '.data.viewer.zones[0].firewallEventsAdaptive[]'
+
+curl -s https://uptimekuma.internal.{{ domain }}/api/push/usvoE2zHu4?status=up&msg=OK&ping= > /dev/null
