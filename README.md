@@ -1,14 +1,49 @@
 # Microserver Ansible Playbooks
 
-This repository contains the ansible scripts required to setup the Proxmox install on the Microserver.
+This repository contains the ansible scripts required to setup Microserver
 
-[![Open in Remote - Containers](https://img.shields.io/static/v1?label=Remote%20-%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=git@github.com:acbgbca/microserver-ansible-playbooks.git)
 
-## Fresh setup
+# Basic Instructions
+
+## Run Docker script
+
+```
+ansible-playbook docker.yml -i hosts
+```
+
+## Do a dry run ```--check```
+
+```
+ansible-playbook docker.yml -i hosts --check
+```
+
+## Run the changes for a single tag ```--tags <tag>```
+
+```
+ansible-playbook -i hosts docker.yml --tags docker
+```
+
+## Encrypt a secret
+
+```
+ansible-vault encrypt_string '<string_to_encrypt>' --name '<string_name_of_variable>'
+```
+
+I.e.
+```
+ansible-vault encrypt_string 'secret' --name 'key'
+
+Encryption successful
+key: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          <encrypted value>
+```
+
+# Fresh setup
 
 For a fresh Promox install, the following steps need to be under taken:
 
-### Initial Configuration
+## Initial Configuration
 Not all steps are convient to do via Ansible. The following should be done manually via the Proxmox interface prior to running the Ansible scripts:
 
 *Create devops user*
