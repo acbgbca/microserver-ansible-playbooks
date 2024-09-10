@@ -1,23 +1,6 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.241.1/containers/azure-ansible
 {
-	"name": "Azure Ansible (Community)",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"args": {
-			"INSTALL_AZURE_CLI": "false",
-			"INSTALL_DOCKER": "false",
-			"NODE_VERSION": "none",
-			"INSTALL_ZSH": "false"
-		}
-	},
-	"runArgs": ["--init"],
-	"mounts": [
-		// [Optional] Anisble Collections: Uncomment if you want to mount your local .ansible/collections folder.
-		// "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ansible/collections,target=/root/.ansible/collections,type=bind,consistency=cached",
-		"source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"
-	],
-	"overrideCommand": false,
+	"name": "Microserver Ansible Playbooks",
+	"image": "mcr.microsoft.com/devcontainers/base:1.1.4-ubuntu",
 	"containerEnv": {
 		"ANSIBLE_VAULT_PASSWORD_FILE": "/workspaces/microserver-ansible-playbooks/vault_password.txt"
 	},
@@ -28,13 +11,18 @@
 		"vscode": {
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
-				"vscoss.vscode-ansible",
+				"redhat.ansible",
 				"redhat.vscode-yaml",
-				"ms-vscode.azurecli",
-				"ms-azuretools.vscode-docker"
-			]
+				"GitHub.vscode-github-actions"
+			],
+			"settings": {
+				"ansible.python.interpreterPath": "/usr/bin/python3"
+			}
+
 		}
 	},
+
+	"onCreateCommand": "sudo apt-get update && sudo apt-get install -y software-properties-common && sudo add-apt-repository --yes --update ppa:ansible/ansible && sudo apt-get install -y ansible ansible-lint",
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
