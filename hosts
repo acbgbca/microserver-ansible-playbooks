@@ -4,12 +4,13 @@
 [docker]
 192.168.0.202
 
-[kasm]
-192.168.0.203
+[microserver]
+192.168.0.131
 
 [multi:children]
 proxmox
 docker
+microserver
 
 [multi:vars]
 ansible_user=devops

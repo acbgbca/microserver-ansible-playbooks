@@ -1,0 +1,24 @@
+---
+default_user: devops
+open_ports:
+  # ssh
+  - port: 22
+  # cockpit
+  - port: 9090
+  # NFS
+  - port: 2049
+  # Node Exporter
+  - port: 9100
+    fromip: 192.168.0.202
+  # Samba
+  - port: 137
+  - port: 138
+  - port: 139
+  - port: 445
+docker_networks_bridge:
+  - ctr-network
+docker_users:
+  - ctrdata
+  - devops
+data_user: ctrdata
+data_id: 9001

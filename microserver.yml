@@ -1,0 +1,37 @@
+---
+- hosts: microserver
+  become: true
+
+  pre_tasks:
+    - name: install python
+      raw: 'apt-get install python3'
+      args:
+        executable: /bin/bash
+    - name: Update apt-cache if needed
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+    - name: install sudo
+      apt:
+        name: sudo
+        state: present
+    - name: Add docker data group
+      group:
+        name: "{{ data_user }}"
+        state: present
+        gid: "{{ data_id }}"
+    - name: Add docker data user
+      user:
+        name: "{{ data_user }}"
+        state: present
+        uid: "{{ data_id }}"
+        group: "{{ data_user }}"
+        append: yes
+        groups:
+          - "{{ data_user }}"
+  
+  roles:
+  - role: base_server
+    tags: baseserver
+  - role: docker
+    tags: docker

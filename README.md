@@ -5,6 +5,14 @@ This repository contains the ansible scripts required to setup Microserver
 
 # Basic Instructions
 
+## First Run
+
+As the ssh key hasn't been deployed, you need to use the password for the first run. Use ```-k``` to pass the password, ```-K``` so the sudo password can be entered, and ```-e 'ansible_user=<user>'``` to override the ansible user to be whomever was setup on the server.
+
+```
+ansible-playbook microserver.yml -i hosts -e 'ansible_user=<user>' -k -K
+```
+
 ## Run Docker script
 
 ```
