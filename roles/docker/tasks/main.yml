@@ -58,6 +58,18 @@
     volume_name: "{{ item.name }}"
   with_items: "{{ docker_networks_nfs }}"
   when: docker_networks_nfs is defined
+- name: Docker macvlan Networks
+  docker_network:
+    name: "{{ item.name }}"
+    driver: "macvlan"
+    driver_options:
+      parent: "{{ item.parent_network }}"
+    ipam_config:
+      - subnet: "{{ item.subnet | default('192.168.0.0/24') }}"
+        gateway: "{{ item.gateway | default('192.168.0.1') }}"
+        iprange: "{{ item.iprange }}"
+  with_items: "{{ docker_networks_macvlan }}"
+  when: docker_networks_macvlan is defined
 - name: Add users to docker group
   user:
     name: "{{ item }}"

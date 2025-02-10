@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# NOTE: This script needs to be run as root
+
 set -euo pipefail
 
 (

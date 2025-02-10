@@ -3,18 +3,10 @@
   become: true
 
   pre_tasks:
-    - name: install python
-      raw: 'apt-get install python3'
-      args:
-        executable: /bin/bash
     - name: Update apt-cache if needed
       apt:
         update_cache: yes
         cache_valid_time: 3600
-    - name: install sudo
-      apt:
-        name: sudo
-        state: present
     - name: Add docker data group
       group:
         name: "{{ data_user }}"
@@ -29,9 +21,16 @@
         append: yes
         groups:
           - "{{ data_user }}"
+    - name: Install base dependencies
+      apt:
+        name:
+          - cron
+        state: present
   
   roles:
   - role: base_server
     tags: baseserver
   - role: docker
     tags: docker
+  - role: docker_server
+    tags: docker_server

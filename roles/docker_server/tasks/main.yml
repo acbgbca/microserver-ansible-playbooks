@@ -1,0 +1,69 @@
+---
+- name: Install git
+  apt:
+    name:
+      - git
+      - acl
+    state: present
+- name: Add "{{ default_user }}" to "{{ data_user }}"
+  user:
+    name: "{{ default_user }}"
+    state: present
+    append: yes
+    groups:
+      - "{{ data_user }}"
+- name: Setup docker directories
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: 0775
+    owner: "{{ data_user }}"
+    group: "{{ data_user }}"
+  loop:
+    - /ctr_cfg
+    - /ctr_data
+- name: Setup Git config
+  git_config:
+    add_mode: add
+    scope: global
+    name: "safe.directory"
+    value: /ctr_cfg
+- name: Checkout Docker configuration
+  git:
+    repo: git@github.com:acbgbca/microserver-docker.git
+    dest: /ctr_cfg
+    update: no
+    accept_hostkey: yes
+  become: no
+  register: gitupdate
+- name: Fix Git ownership
+  file:
+    path: /ctr_cfg
+    state: directory
+    mode: 0775
+    owner: "{{ data_user }}"
+    group: "{{ data_user }}"
+    recurse: yes
+  when: gitupdate.changed
+- name: Setup script directory
+  ansible.builtin.file:
+    path: "/home/{{ default_user }}/bin"
+    state: directory
+    owner: "{{  default_user }}"
+    group: "{{  default_user }}"
+    mode: 0775
+- name: Setup weekly backup script
+  template:
+    src: templates/docker-backup-upgrade
+    dest: "/home/{{ default_user }}/bin/docker-backup-upgrade"
+    owner: "{{ default_user }}"
+    group: "{{ default_user }}"
+    mode: '0755'
+- name: Setup weekly backup cron
+  ansible.builtin.cron:
+    name: "docker-backup-upgrade"
+    minute: 15
+    hour: 3
+    weekday: 6
+    job: "/home/{{ default_user }}/bin/docker-backup-upgrade"
+    user: root
