@@ -4,8 +4,12 @@ set -e
 IFS=$'\n'; set -f
 files=($(rclone lsf onedrive:{{ paperless.cloud_dir }}))
 
-for file in "${files[@]}"; do
-    echo "Moving file $file from {{ paperless.cloud_dir }} to {{ paperless.consume_dir }}"
-    rclone copyto onedrive:{{ paperless.cloud_dir }}/"$file" {{ paperless.consume_dir }}/"$file" --log-level INFO --stats 0
-    rclone deletefile onedrive:{{ paperless.cloud_dir }}/"$file" --log-level INFO --stats 0
-done;
+if [ "${files[@]}" -gt 0 ]; then
+    for file in "${files[@]}"; do
+        echo "Moving file $file from {{ paperless.cloud_dir }} to {{ paperless.consume_dir }}"
+        rclone copyto onedrive:{{ paperless.cloud_dir }}/"$file" {{ paperless.consume_dir }}/"$file" --log-level INFO --stats 0
+        rclone deletefile onedrive:{{ paperless.cloud_dir }}/"$file" --log-level INFO --stats 0
+    done;
+
+    curl https://sablier.internal.{{ domain }}/api/strategies/blocking?group=paperless
+fi
