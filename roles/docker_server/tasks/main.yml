@@ -20,25 +20,25 @@
     owner: "{{ data_user }}"
     group: "{{ data_user }}"
   loop:
-    - /ctr_cfg
-    - /ctr_data
+    - /mnt/ssd512/ctr_cfg
+    - /mnt/ssd512/ctr_data
 - name: Setup Git config
   git_config:
     add_mode: add
     scope: global
     name: "safe.directory"
-    value: /ctr_cfg
+    value: /mnt/ssd512/ctr_cfg
 - name: Checkout Docker configuration
   git:
     repo: git@github.com:acbgbca/microserver-docker.git
-    dest: /ctr_cfg
+    dest: /mnt/ssd512/ctr_cfg
     update: no
     accept_hostkey: yes
   become: no
   register: gitupdate
 - name: Fix Git ownership
   file:
-    path: /ctr_cfg
+    path: /mnt/ssd512/ctr_cfg
     state: directory
     mode: 0775
     owner: "{{ data_user }}"

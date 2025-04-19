@@ -34,3 +34,105 @@
     tags: docker
   - role: docker_server
     tags: docker_server
+  - role: cloud_sync
+    tags: cloudsync
+  - role: samba_server
+    tags: samba
+  
+  tasks:
+  - name: Setup script directory
+    ansible.builtin.file:
+      path: "/home/{{ cloud_sources.rclone_user }}/bin"
+      state: directory
+      owner: "{{  cloud_sources.rclone_user }}"
+      group: "{{  cloud_sources.rclone_user }}"
+      mode: 0775
+    tags: paperless,calibre
+  - name: Generate Scripts
+    ansible.builtin.template:
+      src: templates/{{  item.filename }}.j2
+      dest: "/home/{{ cloud_sources.rclone_user }}/bin/{{ item.filename }}"
+      owner: "{{  cloud_sources.rclone_user }}"
+      group: "{{  cloud_sources.rclone_user }}"
+      mode : 0775
+    with_items: "{{ cron_jobs }}"
+    tags: cron
+  - name: Setup cron jobs
+    ansible.builtin.cron:
+      name: "{{ item.name }}"
+      minute: "{{ item.cronMinute | default('*') }}"
+      job: "/home/{{ cloud_sources.rclone_user }}/bin/{{ item.filename }} > {{ item.logfile }} 2>&1"
+      user: "{{  cloud_sources.rclone_user }}"
+    with_items: "{{ cron_jobs }}"
+    tags: cron
+  - name: Setup log files
+    ansible.builtin.file:
+      path: "{{ item.logfile }}"
+      state: touch
+      owner: "{{  cloud_sources.rclone_user }}"
+      group: "{{  cloud_sources.rclone_user }}"
+      modification_time: preserve
+      access_time: preserve
+      mode: 0664
+    with_items: "{{ cron_jobs }}"
+    tags: cron
+  - name: Calibre Import Script
+    ansible.builtin.template:
+      src: templates/calibre_import.sh.j2
+      dest: "/home/{{ cloud_sources.rclone_user }}/bin/calibre_import.sh"
+      owner: "{{  cloud_sources.rclone_user }}"
+      group: "{{  cloud_sources.rclone_user }}"
+      mode : 0775
+    tags: calibre
+  - name: Calibre Import Cron
+    ansible.builtin.cron:
+      name: "Download Files for Calibre"
+      minute: "*/5"
+      job: "/home/{{ cloud_sources.rclone_user }}/bin/calibre_import.sh > /var/log/calibre 2>&1"
+      user: "{{  cloud_sources.rclone_user }}"
+    tags: calibre
+  - name: Image Sync Script
+    ansible.builtin.template:
+      src: templates/image_sync.sh.j2
+      dest: "/home/{{ cloud_sources.rclone_user }}/bin/image_sync.sh"
+      owner: "{{  cloud_sources.rclone_user }}"
+      group: "{{  cloud_sources.rclone_user }}"
+      mode : 0775
+    tags: imagesync
+  - name: Image Sync Cron
+    ansible.builtin.cron:
+      name: "Image Sync"
+      minute: "15"
+      hour: "5"
+      job: "/home/{{ cloud_sources.rclone_user }}/bin/image_sync.sh > /var/log/imagesync 2>&1"
+      user: "{{  cloud_sources.rclone_user }}"
+    tags: imagesync
+  - name: Add an Apt signing key, uses whichever key is at the URL
+    ansible.builtin.apt_key:
+      url: https://apt.grafana.com/gpg.key
+      state: present
+      keyring: /etc/apt/trusted.gpg.d/grafana.gpg
+    tags: logging
+  - name: Add Grafana Repository
+    ansible.builtin.apt_repository:
+      repo: deb [signed-by=/etc/apt/trusted.gpg.d/grafana.gpg] https://apt.grafana.com stable main
+      state: present
+    tags: logging
+  - name: Install promtail
+    apt:
+      name: promtail
+      state: present
+      update_cache: yes
+    tags: logging
+  - name: Setup Promtail Config
+    ansible.builtin.template:
+      src: templates/promtail-config.yml.j2
+      dest: "/etc/promtail/config.yml"
+    tags: logging
+    notify: Restart Promtail
+
+  handlers:
+  - name: Restart Promtail
+    service:
+      name=promtail
+      state=restarted

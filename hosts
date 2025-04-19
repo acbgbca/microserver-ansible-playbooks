@@ -1,11 +1,5 @@
-[proxmox]
-192.168.0.201
-
-[docker]
-192.168.0.202
-
 [microserver]
-192.168.0.131
+192.168.0.202
 
 [multi:children]
 proxmox

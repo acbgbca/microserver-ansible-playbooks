@@ -8,7 +8,7 @@ set -euo pipefail
     cd /ctr_cfg
 
     # Backup and upgrade docker containers
-    /ctr_cfg/backupupgrade.sh /ctr_cfg /tmp/backup
+    /mnt/ssd512/ctr_cfg/backupupgrade.sh /mnt/ssd512/ctr_cfg /tmp/backup
 
     rm -rf /tmp/backup/*
 
