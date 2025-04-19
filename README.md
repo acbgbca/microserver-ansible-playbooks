@@ -16,19 +16,19 @@ ansible-playbook microserver.yml -i hosts -e 'ansible_user=<user>' -k -K
 ## Run Docker script
 
 ```
-ansible-playbook docker.yml -i hosts
+ansible-playbook microserver.yml -i hosts
 ```
 
 ## Do a dry run ```--check```
 
 ```
-ansible-playbook docker.yml -i hosts --check
+ansible-playbook microserver.yml -i hosts --check
 ```
 
 ## Run the changes for a single tag ```--tags <tag>```
 
 ```
-ansible-playbook -i hosts docker.yml --tags docker
+ansible-playbook -i hosts microserver.yml --tags docker
 ```
 
 ## Encrypt a secret
