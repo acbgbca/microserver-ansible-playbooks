@@ -25,6 +25,7 @@
       apt:
         name:
           - cron
+          - jq # For cloudflare script
         state: present
   
   roles:
@@ -130,6 +131,28 @@
       dest: "/etc/promtail/config.yml"
     tags: logging
     notify: Restart Promtail
+  # GPU Support
+  - name: Add nVidia Apt signing key
+    ansible.builtin.apt_key:
+      url: https://nvidia.github.io/libnvidia-container/gpgkey
+      state: present
+      keyring: /etc/apt/trusted.gpg.d/nvidia.gpg
+    tags: gpu
+  - name: Add nVidia Repository
+    ansible.builtin.apt_repository:
+      repo: deb [signed-by=/etc/apt/trusted.gpg.d/nvidia.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/$(ARCH) /
+      state: present
+    tags: gpu
+  - name: Install nVidia Container Toolkit
+    apt:
+      name: nvidia-container-toolkit
+      state: present
+      update_cache: yes
+    tags: gpu
+  # Then run the following 2 commands:
+  # * sudo nvidia-ctk runtime configure --runtime=docker
+  # * sudo systemctl restart docker
+  # From: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
 
   handlers:
   - name: Restart Promtail

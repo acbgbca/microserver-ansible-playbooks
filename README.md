@@ -13,6 +13,8 @@ As the ssh key hasn't been deployed, you need to use the password for the first 
 ansible-playbook microserver.yml -i hosts -e 'ansible_user=<user>' -k -K
 ```
 
+*NOTE:* The cloud_sync scripts won't work until ```rclone``` has been configured. See [https://acbgbca.github.io/documentation/linux/rclone](https://acbgbca.github.io/documentation/linux/rclone)
+
 ## Run Docker script
 
 ```
