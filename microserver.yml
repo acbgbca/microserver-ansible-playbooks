@@ -41,6 +41,11 @@
     tags: samba
   
   tasks:
+  - name: Set timezone
+    community.general.timezone:
+      name: Australia/Melbourne
+    notify: Restart cron
+    tags: timezone
   - name: Setup script directory
     ansible.builtin.file:
       path: "/home/{{ cloud_sources.rclone_user }}/bin"
@@ -179,3 +184,7 @@
     service:
       name=promtail
       state=restarted
+  - name: Restart cron
+    service:
+      name: cron
+      state: restarted
