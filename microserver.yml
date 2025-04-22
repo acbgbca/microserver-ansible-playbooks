@@ -85,6 +85,16 @@
       group: "{{  cloud_sources.rclone_user }}"
       mode : 0775
     tags: calibre
+  - name: Calibre log files
+    ansible.builtin.file:
+      path: "/var/log/calibre"
+      state: touch
+      owner: "{{  cloud_sources.rclone_user }}"
+      group: "{{  cloud_sources.rclone_user }}"
+      modification_time: preserve
+      access_time: preserve
+      mode: 0664
+    tags: calibre
   - name: Calibre Import Cron
     ansible.builtin.cron:
       name: "Download Files for Calibre"
@@ -99,6 +109,16 @@
       owner: "{{  cloud_sources.rclone_user }}"
       group: "{{  cloud_sources.rclone_user }}"
       mode : 0775
+    tags: imagesync
+  - name: Image Sync log files
+    ansible.builtin.file:
+      path: "/var/log/imagesync"
+      state: touch
+      owner: "{{  cloud_sources.rclone_user }}"
+      group: "{{  cloud_sources.rclone_user }}"
+      modification_time: preserve
+      access_time: preserve
+      mode: 0664
     tags: imagesync
   - name: Image Sync Cron
     ansible.builtin.cron:

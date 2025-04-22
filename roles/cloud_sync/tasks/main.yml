@@ -19,6 +19,15 @@
       group: "{{  item.owner | default(cloud_sources.default_owner) }}"
       mode: 0775
     with_items: "{{ cloud_sources.pathsToMirror }}"
+  - name: Create Mirror Log Directory
+    ansible.builtin.file:
+      path: "/var/log/cloud_mirror"
+      state: touch
+      owner: "{{  cloud_sources.rclone_user }}"
+      group: "{{  cloud_sources.rclone_user }}"
+      modification_time: preserve
+      access_time: preserve
+      mode: 0664
   - name: Setup Mirror Script
     ansible.builtin.template:
       src: templates/cloud_mirror.sh.j2
@@ -50,6 +59,15 @@
       owner: "{{  cloud_sources.rclone_user }}"
       group: "{{  cloud_sources.rclone_user }}"
       mode : 0775
+  - name: Create Sync Log Directory
+    ansible.builtin.file:
+      path: "/var/log/cloud_sync"
+      state: touch
+      owner: "{{  cloud_sources.rclone_user }}"
+      group: "{{  cloud_sources.rclone_user }}"
+      modification_time: preserve
+      access_time: preserve
+      mode: 0664
   - name: "Schedule Sync Script"
     ansible.builtin.cron:
       name: "Sync files"
