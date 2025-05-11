@@ -19,8 +19,8 @@ count=1;
 
 for file in "${files[@]}"; do
     echo "Moving file $count/$length '$file' from {{ item }} to {{ image_sync.local_dest }}"
-    rclone copyto onedrive:{{ item }}/"$file" {{ image_sync.local_dest }}/"$file" --log-level INFO --stats 0
-    rclone copyto {{ image_sync.local_dest }}/"$file" onedrive:{{ image_sync.cloud_dest }}/"$file" --log-level INFO --stats 0
+    rclone copyto onedrive:{{ item }}/"$file" {{ image_sync.local_dest }}/"$file" --check-first --checksum --metadata --log-level INFO --stats 0
+    rclone copyto {{ image_sync.local_dest }}/"$file" onedrive:{{ image_sync.cloud_dest }}/"$file" --check-first --checksum --metadata --log-level INFO --stats 0
     rclone deletefile onedrive:{{ item }}/"$file" --log-level INFO --stats 0
     count=$((count+1))
 done;
