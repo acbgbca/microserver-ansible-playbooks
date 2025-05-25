@@ -15,6 +15,9 @@ open_ports:
   - port: 138
   - port: 139
   - port: 445
+  # WSDD
+  - port: 3702
+  - port: 5357
 docker_networks_bridge:
   - ctr-network
 docker_networks_macvlan:

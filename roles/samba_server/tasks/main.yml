@@ -3,19 +3,21 @@
   apt:
     name: samba
     state: present
-- block:
-  - name: Add share
-    blockinfile:
-      path: /etc/samba/smb.conf
-      marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }}"
-      block: |
-        [{{ item.name }}]
-          comment = {{ item.name }}
-          path = {{ item.path }}
-          browseable = {{ item.browseable | default("yes") }}
-          read only = {{ item.readonly | default("yes") }}
-          guest ok = {{ item.guest | default("no") }}
-    with_items: "{{ samba_sources }}"
-    notify:
-      - restart samba
-  when: samba_sources is defined
+- name: Install WSDD (So computer shows on network)
+  apt:
+    name: wsdd-server
+    state: present
+- name: Setup Samba config
+  ansible.builtin.template:
+    src: templates/smb.conf.j2
+    dest: "/etc/samba/smb.conf"
+    owner: "root"
+    group: "root"
+    mode : 0644
+- name: Setup WSDD config
+  ansible.builtin.template:
+    src: templates/wsdd.j2
+    dest: "/etc/default/wsdd"
+    owner: "root"
+    group: "root"
+    mode : 0644
