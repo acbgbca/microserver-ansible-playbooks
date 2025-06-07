@@ -29,6 +29,7 @@ docker_users:
   - devops
 data_user: ctrdata
 data_id: 9001
+backup_dir: /mnt/data8tb/backup
 ping_id: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           32333736306261343531353034393832306135646266613330336237366238643534396263326138
@@ -70,7 +71,7 @@ cloud_sources:
       dest: paperless/export
     - src: /mnt/data8tb/onedrive/paperless/media
       dest: paperless/media
-    - src: /mnt/data8tb/backup/docker
+    - src: "{{ backup_dir }}/docker"
       dest: backup/docker
     - src: /mnt/data8tb/onedrive/calibre/books
       dest: calibre/books
@@ -119,3 +120,9 @@ cron_jobs:
           3539393231343231650a326631346265386631636135666536626634366465336238643366333430
           64306466323533653332663633383634636138393864363663656639333230376534373530626131
           6439353266316334346234306633653436666133626631323935
+  - name: Backup Git Repositories
+    filename: git_backup.sh
+    logfile: /var/log/gitbackup
+    cronMinute: "15"
+    cronHour: "7"
+    cronDay: "5"

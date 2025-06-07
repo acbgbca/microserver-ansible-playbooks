@@ -53,7 +53,7 @@
       owner: "{{  cloud_sources.rclone_user }}"
       group: "{{  cloud_sources.rclone_user }}"
       mode: 0775
-    tags: paperless,calibre
+    tags: paperless,calibre,cron
   - name: Generate Scripts
     ansible.builtin.template:
       src: templates/{{  item.filename }}.j2
@@ -67,6 +67,8 @@
     ansible.builtin.cron:
       name: "{{ item.name }}"
       minute: "{{ item.cronMinute | default('*') }}"
+      hour: "{{ item.cronHour | default('*') }}"
+      weekday: "{{ item.cronDay | default('*') }}"
       job: "/home/{{ cloud_sources.rclone_user }}/bin/{{ item.filename }} > {{ item.logfile }} 2>&1"
       user: "{{  cloud_sources.rclone_user }}"
     with_items: "{{ cron_jobs }}"
