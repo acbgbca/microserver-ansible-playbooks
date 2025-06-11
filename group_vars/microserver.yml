@@ -27,6 +27,7 @@ docker_networks_macvlan:
 docker_users:
   - ctrdata
   - devops
+docker_daemon_config: templates/docker.json.j2
 data_user: ctrdata
 data_id: 9001
 backup_dir: /mnt/data8tb/backup
