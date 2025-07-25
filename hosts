@@ -1,5 +1,5 @@
 [microserver]
-192.168.0.202
+192.168.94.20
 
 [multi:children]
 proxmox

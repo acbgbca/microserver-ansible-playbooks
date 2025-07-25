@@ -181,6 +181,23 @@
   # * sudo systemctl restart docker
   # From: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
 
+  # Ansible
+  - name: Install Software Properties
+    apt:
+      pkg:
+      - software-properties-common
+    tags: ansible
+  - name: Add Ansible Repository
+    ansible.builtin.apt_repository:
+      repo: ppa:ansible/ansible
+      state: present
+    tags: ansible
+  - name: Install Ansible
+    apt:
+      pkg:
+      - ansible
+    tags: ansible
+
   handlers:
   - name: Restart Promtail
     service:

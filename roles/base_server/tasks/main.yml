@@ -1,9 +1,10 @@
 ---
-- name: Install Unattended Upgrades
+- name: Install Base packages
   apt:
     pkg:
     - unattended-upgrades
     - ufw
+    - dnsutils
 - block:
   - name: Add default user
     user:
