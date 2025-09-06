@@ -3,13 +3,16 @@ default_user: devops
 open_ports:
   # ssh
   - port: 22
+  # email
+  - port: 25
+    fromip: 127.0.0.1
   # cockpit
   - port: 9090
   # NFS
   - port: 2049
   # Node Exporter
   - port: 9100
-    fromip: 192.168.0.202
+    fromip: 127.0.0.1
   # Samba
   - port: 137
   - port: 138

@@ -1,0 +1,20 @@
+# All the examples require v15-compat!
+set v15-compat
+
+# Essential setting: select allowed character sets
+# (Have a look at the "Character sets" manual section)
+set sendcharsets=utf-8,iso-8859-1
+
+# When sending messages, wait until the Mail-Transfer-Agent finishs.
+set sendwait
+
+# Only use builtin MIME types, no mime.types(5) files.
+# That set is often sufficient, but look at the output of the
+# `mimetype' command to ensure this is true for you, too
+set mimetypes-load-control
+
+# This is optional, but you should get the big picture
+# by reading the manual before you leave that off
+set from="Microserver <microserver@{{ domain }}>"
+
+set mta=smtp://localhost:25

@@ -1,10 +1,20 @@
 ---
+- name: Remove old packages
+  apt:
+    pkg:
+    - mailutils # For email notifications
+    - s-nail
+    state: absent
 - name: Install Base packages
   apt:
     pkg:
     - unattended-upgrades
     - ufw
     - dnsutils
+# - name: Setup email config
+#   ansible.builtin.template:
+#     src: templates/mail.rc.j2
+#     dest: /etc/mail.rc
 - block:
   - name: Add default user
     user:
