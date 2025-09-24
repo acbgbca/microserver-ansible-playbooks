@@ -26,7 +26,7 @@ docker_networks_bridge:
 docker_networks_macvlan:
   - name: lan-network
     parent_network: eno1
-    iprange: "192.168.0.64/26"
+    iprange: "192.168.94.64/26"
 docker_users:
   - ctrdata
   - devops
