@@ -1,3 +1,10 @@
 {
-  "log-driver": "journald"
+  "log-driver": "journald",
+   "default-address-pools": [
+    { "base": "172.17.0.0/16", "size": 25 },
+    { "base": "172.19.0.0/16", "size": 25 },
+    { "base": "172.20.0.0/14", "size": 25 },
+    { "base": "172.24.0.0/14", "size": 25 },
+    { "base": "172.28.0.0/14", "size": 25 }
+  ]
 }

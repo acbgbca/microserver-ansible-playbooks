@@ -22,7 +22,9 @@ open_ports:
   - port: 3702
   - port: 5357
 docker_networks_bridge:
-  - ctr-network
+  - name: ctr-network
+    iprange: "172.18.0.0/17"
+    subnet: "172.18.0.0/16"
 docker_networks_macvlan:
   - name: lan-network
     parent_network: eno1
