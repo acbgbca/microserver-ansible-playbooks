@@ -26,6 +26,7 @@
         name:
           - cron
           - jq # For cloudflare script
+          - jc # Convert CLI output to json
         state: present
   
   roles:

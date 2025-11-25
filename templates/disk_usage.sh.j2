@@ -1,0 +1,6 @@
+#!/bin/bash
+
+du -s /mnt/data8tb/* | jc --du | jq -c 'map(. + {"type": "summary"}).[]' > /var/log/diskusage
+du -s /mnt/data8tb/videos/tv/* /mnt/data8tb/videos/kids_tv/* | jc --du | jq -c 'map(. + {"type": "show"}).[]' >> /var/log/diskusage
+du -s /mnt/data8tb/videos/tv/*/* /mnt/data8tb/videos/kids_tv/*/* | jc --du | jq -c 'map(. + {"type": "season"}).[]' >> /var/log/diskusage
+du -s /mnt/data8tb/videos/movies/* /mnt/data8tb/videos/kids_movies/* | jc --du | jq -c 'map(. + {"type": "movie"}).[]' >> /var/log/diskusage

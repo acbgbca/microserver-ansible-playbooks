@@ -132,3 +132,7 @@ cron_jobs:
     cronMinute: "15"
     cronHour: "7"
     cronDay: "5"
+  - name: Disk Usage
+    logfile: /var/log/diskusage
+    filename: disk_usage.sh
+    cronHour: "*/4"

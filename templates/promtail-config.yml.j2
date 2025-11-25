@@ -25,6 +25,20 @@ scrape_configs:
       job: cloudflare_events
       host: {{ inventory_hostname }}
       __path__: /var/log/cloudflare
+- job_name: disk_usage
+  pipeline_stages:
+  - json:
+      expressions:
+        path: name
+      drop_malformed: true
+  - labels:
+      path:
+      type:
+  static_configs:
+  - labels:
+      job: disk_usage
+      host: {{ inventory_hostname }}
+      __path__: /var/log/diskusage
 - job_name: system
   static_configs:
   - labels:
