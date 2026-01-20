@@ -1,0 +1,36 @@
+- name: GL-MT6000
+  hosts: mt6000
+  gather_facts: no
+
+  pre_tasks:
+    - name: Check if Python 3 is installed
+      ansible.builtin.raw: test -e /usr/bin/python3
+      register: python_check
+      ignore_errors: true  # Continue even if the command fails
+      changed_when: false  # This task doesn't change the system
+    
+    - name: Install python3
+      ansible.builtin.raw: opkg update && opkg install python3
+      when: python_check.rc != 0
+    
+  tasks:
+    - name: Install Prometheus modules
+      community.general.opkg:
+        name:
+          - prometheus-node-exporter-lua
+          - prometheus-node-exporter-lua-nat_traffic
+          - prometheus-node-exporter-lua-netstat
+          - prometheus-node-exporter-lua-openwrt
+          - prometheus-node-exporter-lua-wifi
+          - prometheus-node-exporter-lua-wifi_stations
+        state: present
+    - name: Make Prometheus available to lan
+      lineinfile:
+        dest: /etc/config/prometheus-node-exporter-lua
+        regexp: "option listen_interface"
+        line: "        option listen_interface 'lan'"
+        state: present
+      notify: restart prometheus
+  handlers:
+    - name: restart prometheus
+      command: /etc/init.d/prometheus-node-exporter-lua restart
