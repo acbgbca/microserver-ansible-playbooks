@@ -1,0 +1,206 @@
+---
+# roles/libvirt_vms/tasks/create_vm.yml
+#
+# Included once per entry in `libvirt_vms`. The loop var is `vm`.
+
+- name: "{{ vm.name }} | Resolve settings"
+  ansible.builtin.set_fact:
+    _vm:
+      name: "{{ vm.name }}"
+      ip: "{{ vm.ip }}"
+      release: "{{ vm.release | default(libvirt_vm_release) }}"
+      os_variant: "{{ vm.os_variant | default(libvirt_vm_os_variant) }}"
+      memory_mb: "{{ vm.memory_mb | default(libvirt_vm_memory_mb) }}"
+      vcpus: "{{ vm.vcpus | default(libvirt_vm_vcpus) }}"
+      disk_gb: "{{ vm.disk_gb | default(libvirt_vm_disk_gb) }}"
+      user: "{{ vm.user | default(libvirt_vm_user) }}"
+      ssh_key_files: >-
+        {{ (vm.ssh_key_files | default(libvirt_vm_ssh_key_files))
+           | map('expanduser') | list }}
+      bridge: "{{ vm.bridge | default(libvirt_vm_bridge) }}"
+      network_mode: "{{ vm.network_mode | default(libvirt_vm_network_mode) }}"
+      libvirt_network: "{{ vm.libvirt_network | default(libvirt_vm_libvirt_network) }}"
+      host_nic: >-
+        {{ vm.host_nic | default(libvirt_vm_host_nic, true)
+           | default(ansible_facts.default_ipv4.interface, true) }}
+      cidr: "{{ vm.cidr | default(libvirt_vm_cidr) }}"
+      gateway: "{{ vm.gateway | default(libvirt_vm_gateway) }}"
+      nameservers: "{{ vm.nameservers | default(libvirt_vm_nameservers) }}"
+      interface: "{{ vm.interface | default(libvirt_vm_interface) }}"
+      packages: "{{ vm.packages | default(libvirt_vm_packages) }}"
+      autostart: "{{ vm.autostart | default(true) }}"
+      disk: "{{ libvirt_vm_image_dir }}/{{ vm.name }}.qcow2"
+      seed: "{{ libvirt_vm_image_dir }}/{{ vm.name }}-seed.iso"
+      staging: "/tmp/cloudinit-{{ vm.name }}"
+
+# Resolved separately because each entry needs computed fields. Reset
+# to [] first — facts persist across include_tasks iterations.
+- name: "{{ vm.name }} | Reset disk list"
+  ansible.builtin.set_fact:
+    _vm_disks: []
+
+- name: "{{ vm.name }} | Resolve extra disks"
+  ansible.builtin.set_fact:
+    _vm_disks: >-
+      {{ _vm_disks + [item | combine({
+           'host_dir': item.host_dir | default(libvirt_vm_disk_host_dir),
+           'filesystem': item.filesystem | default(libvirt_vm_disk_filesystem),
+           'path': (item.host_dir | default(libvirt_vm_disk_host_dir))
+                   ~ '/' ~ vm.name ~ '-' ~ item.name ~ '.qcow2',
+           'guest_dev': '/dev/disk/by-id/virtio-' ~ item.name,
+         })] }}
+  loop: "{{ vm.disks | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: "{{ vm.name }} | Build extra disk arguments"
+  ansible.builtin.set_fact:
+    _vm_disk_args: >-
+      {% for d in _vm_disks %}--disk path={{ d.path }},format=qcow2,bus=virtio,serial={{ d.name }} {% endfor %}
+
+# source_mode=bridge (not libvirt's vepa default) is what lets VMs on
+# the same host NIC reach each other. Neither mode lets the VM reach
+# the host itself.
+- name: "{{ vm.name }} | Build network arguments"
+  ansible.builtin.set_fact:
+    _vm_network_args: >-
+      {% if _vm.network_mode == 'macvtap' -%}
+      --network type=direct,source={{ _vm.host_nic }},source_mode=bridge,model=virtio
+      {%- elif _vm.network_mode == 'bridge' -%}
+      --network bridge={{ _vm.bridge }},model=virtio
+      {%- else -%}
+      --network network={{ _vm.libvirt_network }},model=virtio
+      {%- endif %}
+ 
+- name: "{{ vm.name }} | Check the macvtap source NIC is physical"
+  ansible.builtin.assert:
+    that:
+      - ansible_facts[_vm.host_nic] is defined
+      - ansible_facts[_vm.host_nic].type == 'ether'
+      - not _vm.host_nic.startswith('br')
+      - not _vm.host_nic.startswith('docker')
+    fail_msg: >-
+      '{{ _vm.host_nic }}' is not a physical NIC. macvtap must attach to
+      the interface on your LAN — set libvirt_vm_host_nic explicitly
+      (check with: ip -br addr).
+  when: _vm.network_mode == 'macvtap'
+
+# Everything below is skipped once the VM exists, so re-runs are safe.
+# To rebuild: virsh destroy <name> && virsh undefine <name> --remove-all-storage
+- name: "{{ vm.name }} | Build"
+  when: _vm.name not in libvirt_existing_vms.list_vms
+  block:
+
+    - name: "{{ vm.name }} | Copy the base image to the VM disk"
+      ansible.builtin.copy:
+        src: "{{ libvirt_vm_image_dir }}/{{ _vm.release }}-base.img"
+        dest: "{{ _vm.disk }}"
+        remote_src: true
+        mode: "0600"
+
+    - name: "{{ vm.name }} | Grow the VM disk"
+      ansible.builtin.command: "qemu-img resize {{ _vm.disk }} {{ _vm.disk_gb }}G"
+      changed_when: true
+
+    - name: "{{ vm.name }} | Ensure host directories for extra disks exist"
+      ansible.builtin.file:
+        path: "{{ item.host_dir }}"
+        state: directory
+        owner: libvirt-qemu
+        group: kvm
+        mode: "0750"
+      loop: "{{ _vm_disks }}"
+      loop_control:
+        label: "{{ item.host_dir }}"
+
+    # `creates:` means an existing data disk is never clobbered, even if
+    # the VM itself is rebuilt from scratch.
+    - name: "{{ vm.name }} | Create extra disks"
+      ansible.builtin.command: >
+        qemu-img create -f qcow2 {{ item.path }} {{ item.size_gb }}G
+      args:
+        creates: "{{ item.path }}"
+      loop: "{{ _vm_disks }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: "{{ vm.name }} | Set ownership on extra disks"
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        owner: libvirt-qemu
+        group: kvm
+        mode: "0600"
+      loop: "{{ _vm_disks }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: "{{ vm.name }} | Create the cloud-init staging directory"
+      ansible.builtin.file:
+        path: "{{ _vm.staging }}"
+        state: directory
+        mode: "0700"
+
+    - name: "{{ vm.name }} | Render cloud-init config"
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "{{ _vm.staging }}/{{ item }}"
+        mode: "0600"
+      loop:
+        - user-data
+        - network-config
+
+    - name: "{{ vm.name }} | Build the cloud-init seed ISO"
+      ansible.builtin.command: >
+        cloud-localds
+        -N {{ _vm.staging }}/network-config
+        {{ _vm.seed }}
+        {{ _vm.staging }}/user-data
+      changed_when: true
+
+    - name: "{{ vm.name }} | Remove any stale SSH host key"
+      ansible.builtin.known_hosts:
+        name: "{{ _vm.ip }}"
+        state: absent
+      delegate_to: localhost
+      become: false
+
+    - name: "{{ vm.name }} | Define and start the VM"
+      ansible.builtin.command: >
+        virt-install
+        --name {{ _vm.name }}
+        --memory {{ _vm.memory_mb }}
+        --vcpus {{ _vm.vcpus }}
+        --cpu host-passthrough
+        --disk path={{ _vm.disk }},format=qcow2,bus=virtio
+        {{ _vm_disk_args }}
+        --disk path={{ _vm.seed }},device=cdrom
+        {{ _vm_network_args }}
+        --memballoon model=virtio,autodeflate=on,freePageReporting=on
+        --os-variant {{ _vm.os_variant }}
+        --graphics none
+        --import
+        --noautoconsole
+      changed_when: true
+
+    - name: "{{ vm.name }} | Set autostart"
+      community.libvirt.virt:
+        name: "{{ _vm.name }}"
+        autostart: "{{ _vm.autostart }}"
+
+    # Fails loudly if libvirt silently dropped the balloon attributes
+    # (too-old libvirt/qemu) rather than leaving you to find out months
+    # later when the host never reclaims RAM.
+    - name: "{{ vm.name }} | Verify free page reporting is enabled"
+      ansible.builtin.command: "virsh dumpxml {{ _vm.name }}"
+      register: domain_xml
+      changed_when: false
+      failed_when: 'domain_xml.stdout is not search("freePageReporting=.on.")'
+
+# Outside the block: runs for existing VMs too, so later plays can
+# target them without a rebuild.
+- name: "{{ vm.name }} | Add to in-memory inventory"
+  ansible.builtin.add_host:
+    name: "{{ _vm.name }}"
+    ansible_host: "{{ _vm.ip }}"
+    ansible_user: "{{ _vm.user }}"
+    groups: "{{ ['libvirt_guests'] + (vm.groups | default([])) }}"

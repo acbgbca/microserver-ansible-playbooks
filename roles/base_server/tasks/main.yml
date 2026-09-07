@@ -11,6 +11,7 @@
     - unattended-upgrades
     - ufw
     - dnsutils
+    - cockpit
 # - name: Setup email config
 #   ansible.builtin.template:
 #     src: templates/mail.rc.j2

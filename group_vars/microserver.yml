@@ -136,3 +136,17 @@ cron_jobs:
     logfile: /var/log/diskusage
     filename: disk_usage.sh
     cronHour: "*/4"
+
+libvirt_vms:
+  - name: devvm
+    ip: 192.168.94.21
+    memory_mb: 12288          # ~12GB of the server's 32GB
+    vcpus: 6
+    disk_gb: 64
+    disks:
+      - name: home
+        size_gb: 128
+        mount: /home
+        host_dir: /mnt/ssd256/vm_disks
+    groups:
+      - dev_vm

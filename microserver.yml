@@ -40,6 +40,8 @@
     tags: cloudsync
   - role: samba_server
     tags: samba
+  - role: vm_server
+    tags: vms
   
   tasks:
   - name: Set timezone

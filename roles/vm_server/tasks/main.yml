@@ -1,0 +1,65 @@
+---
+- name: Install virtualisation tooling on the host
+  ansible.builtin.apt:
+    name: "{{ libvirt_vm_host_packages }}"
+    state: present
+    update_cache: true
+
+# Downloaded once per release, shared by every VM that uses it.
+- name: Collect the set of releases in use
+  ansible.builtin.set_fact:
+    libvirt_vm_releases: >-
+      {{ libvirt_vms
+         | map(attribute='release', default=libvirt_vm_release)
+         | unique | list }}
+
+- name: Download Ubuntu cloud images
+  ansible.builtin.get_url:
+    url: "https://cloud-images.ubuntu.com/{{ item }}/current/{{ item }}-server-cloudimg-amd64.img"
+    dest: "{{ libvirt_vm_image_dir }}/{{ item }}-base.img"
+    checksum: "sha256:https://cloud-images.ubuntu.com/{{ item }}/current/SHA256SUMS"
+    mode: "0644"
+  loop: "{{ libvirt_vm_releases }}"
+
+- name: Collect every SSH key file referenced
+  ansible.builtin.set_fact:
+    libvirt_vm_all_key_files: >-
+      {{ (libvirt_vms
+          | map(attribute='ssh_key_files', default=libvirt_vm_ssh_key_files)
+          | flatten | map('expanduser') | unique | list) }}
+
+- name: Check the key files exist on the control node
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: libvirt_vm_key_stat
+  loop: "{{ libvirt_vm_all_key_files }}"
+  delegate_to: localhost
+  become: false
+  changed_when: false
+
+- name: Fail clearly on a missing or private key file
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists
+      - not (lookup('file', item.item, errors='ignore')
+             | default('', true)).startswith('-----BEGIN')
+    fail_msg: >-
+      {{ item.item }} is missing, or is a private key. This must be a
+      public key file (.pub) on the machine running ansible-playbook.
+  loop: "{{ libvirt_vm_key_stat.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Get the list of defined VMs
+  community.libvirt.virt:
+    command: list_vms
+  register: libvirt_existing_vms
+  changed_when: false
+  check_mode: false
+
+- name: Provision each VM
+  ansible.builtin.include_tasks: create_vm.yml
+  loop: "{{ libvirt_vms }}"
+  loop_control:
+    loop_var: vm
+    label: "{{ vm.name }}"

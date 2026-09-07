@@ -1,6 +1,9 @@
 [microserver]
 192.168.94.20
 
+[dev_vm]
+192.168.94.21
+
 [multi:children]
 proxmox
 docker

@@ -1,0 +1,13 @@
+version: 2
+ethernets:
+  {{ _vm.interface }}:
+    dhcp4: false
+    addresses: [{{ _vm.ip }}/{{ _vm.cidr }}]
+    routes:
+      - to: default
+        via: {{ _vm.gateway }}
+    nameservers:
+      addresses:
+{% for ns in _vm.nameservers %}
+        - {{ ns }}
+{% endfor %}

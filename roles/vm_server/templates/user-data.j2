@@ -1,0 +1,29 @@
+#cloud-config
+# Deliberately minimal: get the guest bootable and reachable over SSH,
+# then let Ansible do everything else.
+#
+# Do NOT put secrets here — user-data is readable from inside the guest
+# at /var/lib/cloud/instance/user-data.txt.
+
+hostname: {{ _vm.name }}
+
+users:
+  - name: {{ _vm.user }}
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+{% for key_file in _vm.ssh_key_files %}
+      - {{ lookup('file', key_file) }}
+{% endfor %}
+
+packages:
+{% for pkg in _vm.packages %}
+  - {{ pkg }}
+{% endfor %}
+
+growpart:
+  mode: auto
+  devices: ["/"]
+
+package_update: true
