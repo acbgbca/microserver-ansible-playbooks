@@ -105,6 +105,28 @@
       remote_src: true
       creates: /usr/local/bin/code
   
+  # `code tunnel service install` needs an interactive GitHub device-code
+  # login, so it can't be run unattended from here — these two tasks just
+  # get the prerequisite in place and tell you the command to run if the
+  # service isn't set up yet.
+  - name: Enable linger for the dev user so user-level services persist after logout
+    ansible.builtin.command: "loginctl enable-linger {{ dev_user | default('devops') }}"
+    args:
+      creates: "/var/lib/systemd/linger/{{ dev_user | default('devops') }}"
+  
+  - name: Check whether the VS Code tunnel service is installed
+    ansible.builtin.stat:
+      path: "/home/{{ dev_user | default('devops') }}/.config/systemd/user/code-tunnel.service"
+    register: vscode_tunnel_service
+  
+  - name: Show setup command if the VS Code tunnel service isn't installed yet
+    ansible.builtin.debug:
+      msg: >-
+        VS Code tunnel service not found. SSH in as
+        {{ dev_user | default('devops') }} and run: code tunnel service install
+    when: not vscode_tunnel_service.stat.exists
+    changed_when: true
+  
   # --- Claude Code ----------------------------------------------------------  
   - name: Add Claude Code apt repository
     ansible.builtin.deb822_repository:
@@ -147,6 +169,59 @@
       label: "{{ item.name }}"
     become: true
     become_user: "{{ dev_user | default('devops') }}"
+
+  # --- Automatic updates -------------------------------------------------
+  - name: Install unattended-upgrades
+    ansible.builtin.apt:
+      name: unattended-upgrades
+      state: present
+  
+  - name: Enable periodic apt actions
+    ansible.builtin.copy:
+      dest: /etc/apt/apt.conf.d/20auto-upgrades
+      content: |
+        APT::Periodic::Update-Package-Lists "1";
+        APT::Periodic::Download-Upgradeable-Packages "1";
+        APT::Periodic::AutocleanInterval "7";
+        APT::Periodic::Unattended-Upgrade "1";
+      mode: '0644'
+  
+  - name: Configure unattended-upgrades
+    ansible.builtin.copy:
+      dest: /etc/apt/apt.conf.d/50unattended-upgrades
+      content: |
+        Unattended-Upgrade::Allowed-Origins {
+            "${distro_id}:${distro_codename}-security";
+            "${distro_id}:${distro_codename}-updates";
+        };
+        Unattended-Upgrade::Remove-Unused-Dependencies "true";
+        Unattended-Upgrade::Automatic-Reboot "true";
+        Unattended-Upgrade::Automatic-Reboot-Time "03:00";
+      mode: '0644'
+  
+  - name: Ensure the apt-daily-upgrade timer override directory exists
+    ansible.builtin.file:
+      path: /etc/systemd/system/apt-daily-upgrade.timer.d
+      state: directory
+      mode: '0755'
+  
+  - name: Set the upgrade timer to run weekly, Sunday 22:00
+    ansible.builtin.copy:
+      dest: /etc/systemd/system/apt-daily-upgrade.timer.d/override.conf
+      content: |
+        [Timer]
+        OnCalendar=
+        OnCalendar=Sun *-*-* 22:00:00
+        RandomizedDelaySec=0
+        Persistent=true
+      mode: '0644'
+  
+  - name: Ensure the apt-daily-upgrade timer is enabled and running
+    ansible.builtin.systemd:
+      name: apt-daily-upgrade.timer
+      daemon_reload: true
+      enabled: true
+      state: started
 
   handlers:
   - name: Restart cron
