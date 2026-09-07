@@ -1,0 +1,155 @@
+---
+- hosts: devvm
+  become: true
+
+  tasks:
+  - name: Set timezone
+    community.general.timezone:
+      name: Australia/Melbourne
+    notify: Restart cron
+    tags: timezone
+
+  - name: Ensure the universe component is enabled
+    ansible.builtin.apt_repository:
+      repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} universe"
+      state: present
+
+  - name: Install packages not present on a stock Ubuntu cloud image
+    ansible.builtin.apt:
+      name:
+        - pigz
+        - zfsutils-linux
+        - nodejs
+        - npm
+      state: present
+      update_cache: true
+      install_recommends: false
+  
+  - name: Ensure prerequisites for repo management are present
+    ansible.builtin.apt:
+      name:
+        - software-properties-common  # provides add-apt-repository / apt_repository support
+        - python3-debian               # required by deb822_repository
+      state: present
+
+  # --- mise -------------------------------------------------------------
+
+  - name: Install extrepo
+    ansible.builtin.apt:
+      name: extrepo
+      state: present
+  
+  - name: Enable the mise apt repository via extrepo
+    ansible.builtin.command: extrepo enable mise
+    args:
+      creates: /etc/apt/sources.list.d/extrepo_mise.sources
+
+  - name: Install mise
+    ansible.builtin.apt:
+      name: mise
+      state: present
+      update_cache: true
+
+  # --- GitHub CLI ---------------------------------------------------------
+
+  - name: Add GitHub CLI apt repository
+    ansible.builtin.deb822_repository:
+      name: github-cli
+      types: deb
+      uris: https://cli.github.com/packages
+      suites: stable
+      components: main
+      signed_by: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+
+  - name: Install GitHub CLI
+    ansible.builtin.apt:
+      name: gh
+      state: present
+      update_cache: true
+      install_recommends: false
+
+  # --- Docker -------------------------------------------------------------
+
+  - name: Add Docker apt repository
+    ansible.builtin.deb822_repository:
+      name: docker
+      types: deb
+      uris: https://download.docker.com/linux/ubuntu
+      suites: "{{ ansible_distribution_release }}"
+      components: stable
+      signed_by: https://download.docker.com/linux/ubuntu/gpg
+
+  - name: Install Docker packages
+    ansible.builtin.apt:
+      name:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-buildx-plugin
+        - docker-compose-plugin
+      state: present
+      update_cache: true
+      install_recommends: false
+
+  # --- VS Code CLI ---------------------------------------------------------  
+  - name: Download VS Code CLI archive
+    ansible.builtin.get_url:
+      url: "https://code.visualstudio.com/sha/download?build=stable&os=cli-alpine-x64"
+      dest: /tmp/vscode_cli.tar.gz
+      mode: '0644'
+  
+  - name: Extract VS Code CLI
+    ansible.builtin.unarchive:
+      src: /tmp/vscode_cli.tar.gz
+      dest: /usr/local/bin
+      remote_src: true
+      creates: /usr/local/bin/code
+  
+  # --- Claude Code ----------------------------------------------------------  
+  - name: Add Claude Code apt repository
+    ansible.builtin.deb822_repository:
+      name: claude-code
+      types: deb
+      uris: https://downloads.claude.ai/claude-code/apt/stable
+      suites: stable
+      components: main
+      signed_by: https://downloads.claude.ai/keys/claude-code.asc
+  
+  - name: Install Claude Code
+    ansible.builtin.apt:
+      name: claude-code
+      state: present
+      update_cache: true
+  
+  # --- Projects directory & repo clone ---------------------------------------
+  
+  - name: Ensure projects directory exists
+    ansible.builtin.file:
+      path: "/home/{{ dev_user | default('devops') }}/projects"
+      state: directory
+      owner: "{{ dev_user | default('devops') }}"
+      group: "{{ dev_user | default('devops') }}"
+      mode: '0755'
+  
+  - name: Fetch list of public repositories for the GitHub account
+    ansible.builtin.uri:
+      url: "https://api.github.com/users/{{ github_user | default('acbgbca') }}/repos?per_page=100"
+      return_content: true
+    register: github_repos
+  
+  - name: Clone all repositories into the projects directory
+    ansible.builtin.git:
+      repo: "{{ item.clone_url }}"
+      dest: "/home/{{ dev_user | default('devops') }}/projects/{{ item.name }}"
+      update: false
+    loop: "{{ github_repos.json }}"
+    loop_control:
+      label: "{{ item.name }}"
+    become: true
+    become_user: "{{ dev_user | default('devops') }}"
+
+  handlers:
+  - name: Restart cron
+    service:
+      name: cron
+      state: restarted

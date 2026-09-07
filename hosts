@@ -1,13 +1,14 @@
 [microserver]
 192.168.94.20
 
-[dev_vm]
+[devvm]
 192.168.94.21
 
 [multi:children]
 proxmox
 docker
 microserver
+devvm
 
 [multi:vars]
 ansible_user=devops

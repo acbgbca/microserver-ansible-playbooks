@@ -30,7 +30,7 @@ libvirt_host_bridge_address: ""     # "" = keep the host's current address
 libvirt_host_bridge_gateway: ""     # "" = keep the host's current gateway
 libvirt_host_bridge_nameservers:
   - 192.168.94.1
-libvirt_vm_gateway: ""
+libvirt_vm_gateway: 192.168.94.1
 libvirt_vm_nameservers:
   - 192.168.94.1
 
