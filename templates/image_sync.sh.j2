@@ -11,7 +11,7 @@ echo "Running Image Sync"
 
 {% for item in image_sync.srcPaths %}
 echo "Looking for images in {{ item }}"
-readarray -t files < <(rclone lsf onedrive:{{ item }} -R --files-only)
+readarray -t files < <(rclone lsf onedrive:{{ item }} -R --files-only --exclude "*.partial" --min-age 10m)
 {% raw %}
 length=${#files[@]}
 count=1;
@@ -28,4 +28,4 @@ done;
 
 echo "Image sync Complete"
 
-curl -w "\n" https://uptimekuma.internal.{{ domain }}/api/push/sE5hshzK2F?status=up&msg=OK&ping=
+curl -w "\n" "https://uptimekuma.internal.{{ domain }}/api/push/sE5hshzK2F?status=up&msg=OK&ping="
